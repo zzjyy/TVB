@@ -17,27 +17,16 @@ import com.fongmi.android.tv.ui.activity.CrashActivity;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.hook.Hook;
 import com.github.catvod.Init;
-import com.github.catvod.bean.Doh;
-import com.github.catvod.net.OkHttp;
 import com.google.gson.Gson;
-import com.orhanobut.logger.AndroidLogAdapter;
-import com.orhanobut.logger.LogAdapter;
-import com.orhanobut.logger.Logger;
-import com.orhanobut.logger.PrettyFormatStrategy;
 
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import cat.ereza.customactivityoncrash.config.CaocConfig;
+    private static volatile App instance;
 
-public class App extends Application {
-
-    private final ExecutorService executor;
     private final Handler handler;
-    private static App instance;
-    private Activity activity;
     private final Gson gson;
     private final long time;
     private Hook hook;
@@ -48,6 +37,8 @@ public class App extends Application {
         handler = HandlerCompat.createAsync(Looper.getMainLooper());
         time = System.currentTimeMillis();
         gson = new Gson();
+        time = System.currentTimeMillis();
+        handler = HandlerCompat.createAsync(Looper.getMainLooper());
     }
 
     public static App get() {
@@ -66,8 +57,8 @@ public class App extends Application {
         return get().activity;
     }
 
-    public static void execute(Runnable runnable) {
-        get().executor.execute(runnable);
+    public static Activity activity() {
+        return get().activity;
     }
 
     public static void post(Runnable runnable) {
@@ -89,19 +80,6 @@ public class App extends Application {
 
     public void setHook(Hook hook) {
         this.hook = hook;
-    }
-
-    private void setActivity(Activity activity) {
-        this.activity = activity;
-    }
-
-    private LogAdapter getLogAdapter() {
-        return new AndroidLogAdapter(PrettyFormatStrategy.newBuilder().methodCount(0).showThreadInfo(false).tag("").build()) {
-            @Override
-            public boolean isLoggable(int priority, String tag) {
-                return true;
-            }
-        };
     }
 
     @Override

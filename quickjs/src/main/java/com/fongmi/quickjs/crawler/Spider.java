@@ -30,28 +30,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import dalvik.system.DexClassLoader;
-import java9.util.concurrent.CompletableFuture;
 
 public class Spider extends com.github.catvod.crawler.Spider {
 
     private final ExecutorService executor;
     private final DexClassLoader dex;
+    private final String api;
+
     private QuickJSContext ctx;
     private JSObject jsObject;
-    private final String key;
-    private final String api;
     private boolean cat;
 
-    public Spider(String key, String api, DexClassLoader dex) throws Exception {
+    public Spider(String api, DexClassLoader dex) {
         this.executor = Executors.newSingleThreadExecutor();
-        this.key = key;
         this.api = api;
         this.dex = dex;
-        initializeJS();
-    }
-
-    private void submit(Runnable runnable) {
-        executor.submit(runnable);
     }
 
     private <T> Future<T> submit(Callable<T> callable) {
@@ -121,9 +114,13 @@ public class Spider extends com.github.catvod.crawler.Spider {
     }
 
     @Override
-    public Object[] proxyLocal(Map<String, String> params) throws Exception {
-        if ("catvod".equals(params.get("from"))) return proxy2(params);
-        else return submit(() -> proxy1(params)).get();
+    public Object[] proxy(Map<String, String> params) throws Exception {
+        return "catvod".equals(params.get("from")) ? proxy2(params) : proxy1(params);
+    }
+
+    @Override
+    public String action(String action) throws Exception {
+        return (String) call("action", action);
     }
 
     @Override
@@ -142,7 +139,8 @@ public class Spider extends com.github.catvod.crawler.Spider {
             executor.shutdownNow();
             jsObject.release();
             ctx.destroy();
-        });
+            return null;
+        }).get();
     }
 
     private void initializeJS() throws Exception {
@@ -219,8 +217,8 @@ public class Spider extends com.github.catvod.crawler.Spider {
         String header = params.get("header");
         JSArray array = submit(() -> JSUtil.toArray(ctx, Arrays.asList(url.split("/")))).get();
         Object object = submit(() -> ctx.parse(header)).get();
-        String json = (String) call("proxy", array, object);
-        Res res = Res.objectFrom(json);
+        String proxy = (String) call("proxy", array, object);
+        Res res = Res.objectFrom(proxy);
         Object[] result = new Object[3];
         result[0] = res.getCode();
         result[1] = res.getContentType();

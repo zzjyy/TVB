@@ -39,15 +39,17 @@ public class Thunder implements Source.Extractor {
 
     private String addTorrentTask(Uri uri) throws Exception {
         File torrent = new File(uri.getPath());
+        File parent = torrent.getParentFile();
         String name = uri.getQueryParameter("name");
         int index = Integer.parseInt(uri.getQueryParameter("index"));
-        taskId = XLTaskHelper.get().addTorrentTask(torrent, Objects.requireNonNull(torrent.getParentFile()), index);
-        while (true) {
-            XLTaskInfo taskInfo = XLTaskHelper.get().getBtSubTaskInfo(taskId, index).mTaskInfo;
-            if (taskInfo.mTaskStatus == 3) throw new ExtractException(taskInfo.getErrorMsg());
-            if (taskInfo.mTaskStatus != 0) return XLTaskHelper.get().getLocalUrl(new File(torrent.getParent(), name));
-            else SystemClock.sleep(300);
+        taskId = XLTaskHelper.get().addTorrentTask(torrent, parent, index);
+        for (int i = 0; i < 100; i++) {
+            XLTaskInfo info = XLTaskHelper.get().getBtSubTaskInfo(taskId, index).mTaskInfo;
+            if (info.mTaskStatus == 3) throw new ExtractException(info.getErrorMsg());
+            if (info.mTaskStatus != 0) return XLTaskHelper.get().getLocalUrl(new File(parent, name));
+            SystemClock.sleep(100);
         }
+        throw new ExtractException(ResUtil.getString(R.string.error_play_timeout));
     }
 
     private String addThunderTask(String url) {
@@ -60,6 +62,7 @@ public class Thunder implements Source.Extractor {
     public void stop() {
         if (taskId == null) return;
         XLTaskHelper.get().deleteTask(taskId);
+        XLTaskHelper.get().release();
         taskId = null;
     }
 

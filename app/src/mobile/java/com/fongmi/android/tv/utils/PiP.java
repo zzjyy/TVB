@@ -16,9 +16,9 @@ import androidx.annotation.StringRes;
 import androidx.media3.ui.R;
 
 import com.fongmi.android.tv.App;
-import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.event.ActionEvent;
 import com.fongmi.android.tv.receiver.ActionReceiver;
+import com.fongmi.android.tv.setting.PlayerSetting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +29,11 @@ public class PiP {
 
     public static boolean noPiP() {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !App.get().getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE);
+    }
+
+    public PiP() {
+        if (noPiP()) return;
+        this.builder = new PictureInPictureParams.Builder();
     }
 
     @TargetApi(Build.VERSION_CODES.O)
@@ -51,11 +56,11 @@ public class PiP {
     }
 
     public void update(Activity activity, View view) {
-        if (noPiP()) return;
-        Rect sourceRectHint = new Rect();
-        view.getGlobalVisibleRect(sourceRectHint);
-        builder.setSourceRectHint(sourceRectHint);
         try {
+            if (noPiP()) return;
+            Rect rect = new Rect();
+            view.getGlobalVisibleRect(rect);
+            builder.setSourceRectHint(rect);
             activity.setPictureInPictureParams(builder.build());
         } catch (Exception e) {
             e.printStackTrace();
@@ -63,12 +68,12 @@ public class PiP {
     }
 
     public void update(Activity activity, boolean play) {
-        if (noPiP()) return;
-        List<RemoteAction> actions = new ArrayList<>();
-        actions.add(buildRemoteAction(activity, R.drawable.exo_icon_previous, R.string.exo_controls_previous_description, ActionEvent.PREV));
-        actions.add(getPlayPauseAction(activity, play));
-        actions.add(buildRemoteAction(activity, R.drawable.exo_icon_next, R.string.exo_controls_next_description, ActionEvent.NEXT));
         try {
+            if (noPiP()) return;
+            List<RemoteAction> actions = new ArrayList<>();
+            actions.add(buildRemoteAction(activity, com.fongmi.android.tv.R.drawable.ic_action_audio, R.string.exo_controls_hide, ActionEvent.AUDIO));
+            actions.add(getPlayPauseAction(activity, play));
+            actions.add(buildRemoteAction(activity, R.drawable.exo_icon_next, R.string.exo_controls_next_description, ActionEvent.NEXT));
             activity.setPictureInPictureParams(builder.setActions(actions).build());
         } catch (Exception e) {
             e.printStackTrace();

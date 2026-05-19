@@ -8,6 +8,7 @@ import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.player.extractor.Force;
 import com.fongmi.android.tv.player.extractor.JianPian;
 import com.fongmi.android.tv.player.extractor.Push;
+import com.fongmi.android.tv.player.extractor.Strm;
 import com.fongmi.android.tv.player.extractor.TVBus;
 import com.fongmi.android.tv.player.extractor.Thunder;
 import com.fongmi.android.tv.player.extractor.Video;
@@ -27,8 +28,16 @@ public class Source {
 
     private final List<Extractor> extractors;
 
-    private static class Loader {
-        static volatile Source INSTANCE = new Source();
+    public Source() {
+        extractors = new ArrayList<>();
+        extractors.add(new Force());
+        extractors.add(new JianPian());
+        extractors.add(new Push());
+        extractors.add(new Strm());
+        extractors.add(new Thunder());
+        extractors.add(new TVBus());
+        extractors.add(new Video());
+        extractors.add(new Youtube());
     }
 
     public static Source get() {
@@ -76,8 +85,9 @@ public class Source {
     }
 
     public String fetch(Result result) throws Exception {
+        Uri uri = result.getUrl().uri();
         String url = result.getUrl().v();
-        Extractor extractor = getExtractor(url);
+        Extractor extractor = getExtractor(uri);
         if (extractor != null) result.setParse(0);
         if (extractor instanceof Video) result.setParse(1);
         return extractor == null ? url : extractor.fetch(url);
@@ -93,22 +103,26 @@ public class Source {
 
     public void stop() {
         if (extractors == null) return;
-        for (Extractor extractor : extractors) extractor.stop();
+        extractors.forEach(Extractor::stop);
     }
 
     public void exit() {
         if (extractors == null) return;
-        for (Extractor extractor : extractors) extractor.exit();
+        Task.execute(() -> extractors.forEach(Extractor::exit));
     }
 
     public interface Extractor {
 
-        boolean match(String scheme, String host);
-
         String fetch(String url) throws Exception;
+
+        boolean match(Uri uri);
 
         void stop();
 
         void exit();
+    }
+
+    private static class Loader {
+        static volatile Source INSTANCE = new Source();
     }
 }

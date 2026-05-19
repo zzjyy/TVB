@@ -2,6 +2,7 @@ package com.fongmi.android.tv.ui.activity;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Bundle;
 
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.viewbinding.ViewBinding;
@@ -36,7 +37,7 @@ public class KeepActivity extends BaseActivity implements KeepAdapter.OnClickLis
     }
 
     @Override
-    protected void initView() {
+    protected void initView(Bundle savedInstanceState) {
         setRecyclerView();
         getKeep();
     }
@@ -50,7 +51,7 @@ public class KeepActivity extends BaseActivity implements KeepAdapter.OnClickLis
     }
 
     private void getKeep() {
-        mAdapter.addAll(Keep.getVod());
+        mAdapter.setItems(Keep.getVod(), () -> mBinding.progressLayout.showContent(true, mAdapter.getItemCount()));
     }
 
     private void loadConfig(Config config, Keep item) {
@@ -85,8 +86,9 @@ public class KeepActivity extends BaseActivity implements KeepAdapter.OnClickLis
 
     @Override
     public void onItemDelete(Keep item) {
-        mAdapter.delete(item.delete());
-        if (mAdapter.getItemCount() == 0) mAdapter.setDelete(false);
+        mAdapter.remove(item.delete(), () -> {
+            if (mAdapter.getItemCount() == 0) mAdapter.setDelete(false);
+        });
     }
 
     @Override
@@ -96,8 +98,8 @@ public class KeepActivity extends BaseActivity implements KeepAdapter.OnClickLis
     }
 
     @Override
-    public void onBackPressed() {
+    protected void onBackInvoked() {
         if (mAdapter.isDelete()) mAdapter.setDelete(false);
-        else super.onBackPressed();
+        else super.onBackInvoked();
     }
 }

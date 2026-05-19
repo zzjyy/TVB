@@ -1,10 +1,10 @@
-# 影視
+# 開發者文件
 
-### 基於 CatVod 項目
+基於 [CatVod](https://github.com/CatVodTVOfficial/CatVodTVJarLoader) 的開源 Android 影音應用程式，同時支援 **Android TV 大螢幕**與**手機**兩種使用情境，並且透過外部配置靈活擴展內容。
 
-https://github.com/CatVodTVOfficial/CatVodTVJarLoader
+[討論群組](https://t.me/fongmi_official) | [發布頻道](https://t.me/fongmi_release)
 
-### 點播欄位
+[![Star History Chart](https://api.star-history.com/svg?repos=FongMi/TV&type=Date)](https://www.star-history.com/#FongMi/TV&Date)
 
 | 欄位名稱       | 預設值  | 說明   | 其他         |
 |------------|------|------|------------|
@@ -17,7 +17,7 @@ https://github.com/CatVodTVOfficial/CatVodTVJarLoader
 | header     | none | 請求標頭 | 格式：json    |
 | click      | none | 點擊js | javascript |
 
-### 直播欄位
+## 目錄
 
 | 欄位名稱     | 預設值   | 說明    | 其他         |
 |----------|-------|-------|------------|
@@ -228,14 +228,16 @@ proxy://do=js
 getProxy(boolean local)
 ```
 
-### 配置範例
+---
 
-[點播-線上](other/sample/vod/online.json)  
-[點播-本地](other/sample/vod/offline.json)  
-[直播-線上](other/sample/live/online.json)  
-[直播-本地](other/sample/live/offline.json)
+## 專案架構
 
-### 飛機群
+| 項目      | 值                             |
+|---------|-------------------------------|
+| package | `com.fongmi.android.tv`       |
+| minSdk  | 24（Android 7.0 Nougat）        |
+| abi     | `arm64-v8a`、`armeabi-v7a`     |
+| flavor  | `leanback`（電視版）、`mobile`（手機版） |
 
 [討論群組](https://t.me/+qTlg0qAVzP9kMmM1)  
 [發布頻道](https://t.me/fongmi_release)

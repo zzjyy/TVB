@@ -14,7 +14,7 @@ import java.util.List;
 
 public class DohAdapter extends RecyclerView.Adapter<DohAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<Doh> mItems;
     private int select;
 
@@ -29,11 +29,6 @@ public class DohAdapter extends RecyclerView.Adapter<DohAdapter.ViewHolder> {
 
     public int getSelect() {
         return select;
-    }
-
-    public interface OnClickListener {
-
-        void onItemClick(Doh item);
     }
 
     @Override
@@ -51,11 +46,11 @@ public class DohAdapter extends RecyclerView.Adapter<DohAdapter.ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Doh item = mItems.get(position);
         holder.binding.text.setText(item.getName());
-        holder.binding.text.setActivated(select == position);
-        holder.binding.text.setOnClickListener(v -> mListener.onItemClick(item));
+        holder.binding.text.setSelected(select == position);
+        holder.binding.text.setOnClickListener(v -> listener.onItemClick(item));
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterDohBinding binding;
 

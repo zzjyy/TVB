@@ -44,6 +44,14 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
     private static final Pattern PLAYER = Pattern.compile("player/.*[?&][^=&]+=https?://");
     private static final String BLANK = "about:blank";
 
+    private static final String TAG = CustomWebView.class.getSimpleName();
+
+    private static final Pattern PLAYER = Pattern.compile("player.*https?://");
+    private static final String BLANK = "about:blank";
+    private static final int MAX_URLS = 5;
+
+    private final AtomicReference<ParseCallback> callbackRef = new AtomicReference<>();
+    private LinkedHashSet<String> urls;
     private WebResourceResponse empty;
     private ParseCallback callback;
     private HashSet<String> urls;
@@ -59,7 +67,7 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
         return new CustomWebView(context);
     }
 
-    public CustomWebView(@NonNull Context context) {
+    private CustomWebView(@NonNull Context context) {
         super(context);
         initSettings();
     }
@@ -137,7 +145,7 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
             }
 
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 return false;
             }
         };
@@ -199,14 +207,25 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
     }
 
     private void onParseSuccess(Map<String, String> headers, String url) {
-        if (callback != null) callback.onParseSuccess(headers, url, from);
-        App.post(() -> stop(false));
-        callback = null;
+        ParseCallback cb = callbackRef.getAndSet(null);
+        if (cb != null) cb.onParseSuccess(headers, url, from);
+        post(() -> stop(false));
     }
 
     private void onParseError() {
-        if (callback != null) callback.onParseError();
-        callback = null;
+        ParseCallback cb = callbackRef.getAndSet(null);
+        if (cb != null) cb.onParseError();
+    }
+
+    public void stop(boolean error) {
+        if (stopped) return;
+        stopped = true;
+        hideDialog();
+        stopLoading();
+        loadUrl(BLANK);
+        App.removeCallbacks(timer);
+        if (error) onParseError();
+        else callbackRef.set(null);
     }
 
     public void stop(boolean error) {

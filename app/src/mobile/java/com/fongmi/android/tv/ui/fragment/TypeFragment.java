@@ -29,10 +29,7 @@ import com.fongmi.android.tv.ui.base.BaseFragment;
 import com.fongmi.android.tv.ui.custom.CustomScroller;
 import com.fongmi.android.tv.utils.Notify;
 
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class TypeFragment extends BaseFragment implements CustomScroller.Callback, VodAdapter.OnClickListener, SwipeRefreshLayout.OnRefreshListener {
 
@@ -41,11 +38,10 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
     private CustomScroller mScroller;
     private SiteViewModel mViewModel;
     private VodAdapter mAdapter;
-    private List<Page> mPages;
-    private Page mPage;
 
     public static TypeFragment newInstance(String key, String typeId, Style style, HashMap<String, String> extend, boolean folder) {
         Bundle args = new Bundle();
+        args.putInt("y", y);
         args.putString("key", key);
         args.putString("typeId", typeId);
         args.putBoolean("folder", folder);
@@ -61,7 +57,11 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
     }
 
     private String getTypeId() {
-        return mPages.isEmpty() ? getArguments().getString("typeId") : getLastPage().getVodId();
+        return getArguments().getString("typeId");
+    }
+
+    private Style getStyle() {
+        return isFolder() ? Style.list() : getSite().getStyle(getArguments().getParcelable("style"));
     }
 
     private Style getStyle() {
@@ -69,8 +69,11 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
     }
 
     private HashMap<String, String> getExtend() {
-        Serializable extend = getArguments().getSerializable("extend");
-        return extend == null ? new HashMap<>() : (HashMap<String, String>) extend;
+        return (HashMap<String, String>) getArguments().getSerializable("extend");
+    }
+
+    private int getY() {
+        return getArguments().getInt("y");
     }
 
     private boolean isFolder() {
@@ -100,33 +103,29 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
 
     @Override
     protected void initView() {
+        mBinding.progressLayout.showProgress();
         mScroller = new CustomScroller(this);
-        mPages = new ArrayList<>();
         mExtends = getExtend();
         setRecyclerView();
         setViewModel();
+        getVideo();
     }
 
     @Override
     protected void initEvent() {
         mBinding.swipeLayout.setOnRefreshListener(this);
-        mBinding.recycler.addOnScrollListener(mScroller = new CustomScroller(this));
-    }
-
-    @Override
-    protected void initData() {
-        mBinding.progressLayout.showProgress();
-        getVideo();
+        mBinding.recycler.addOnScrollListener(mScroller);
     }
 
     private void setRecyclerView() {
+        mBinding.recycler.setTranslationY(-ResUtil.dp2px(getY()));
         mBinding.recycler.setHasFixedSize(true);
         setStyle(getStyle());
     }
 
     private void setStyle(Style style) {
-        mBinding.recycler.setAdapter(mAdapter = new VodAdapter(this, style, Product.getSpec(getActivity(), style)));
-        mBinding.recycler.setLayoutManager(style.isList() ? new LinearLayoutManager(getActivity()) : new GridLayoutManager(getContext(), Product.getColumn(getActivity(), style)));
+        mBinding.recycler.setAdapter(mAdapter = new VodAdapter(this, style, Product.getSpec(requireActivity(), style)));
+        mBinding.recycler.setLayoutManager(style.isList() ? new LinearLayoutManager(requireActivity()) : new GridLayoutManager(getContext(), Product.getColumn(requireActivity(), style)));
     }
 
     private void setViewModel() {
@@ -142,7 +141,11 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
 
     private void getVideo() {
         mScroller.reset();
-        getVideo(getTypeId(), "1");
+        mAdapter.clear(() -> {
+            if (!mBinding.swipeLayout.isRefreshing()) mBinding.progressLayout.showProgress();
+            if (isHome()) setAdapter(getParent().getResult());
+            else getVideo(getTypeId(), "1");
+        });
     }
 
     private void getVideo(String typeId, String page) {
@@ -157,27 +160,25 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
         int size = result.getList().size();
         mBinding.progressLayout.showContent(first, size);
         mBinding.swipeLayout.setRefreshing(false);
-        if (size > 0) addVideo(result);
         mScroller.endLoading(result);
-        checkPosition(first);
-        checkMore(size);
+        if (size > 0) addVideo(result);
     }
 
     private void addVideo(Result result) {
-        Style style = result.getList().get(0).getStyle(getStyle());
+        Style style = result.getVod().getStyle(getStyle());
         if (!style.equals(mAdapter.getStyle())) setStyle(style);
-        mAdapter.addAll(result.getList());
+        mAdapter.addAll(result.getList(), this::checkMore);
     }
 
-    private void checkPosition(boolean first) {
-        if (mPage != null) scrollToPosition(mPage.getPosition());
-        else if (first) mBinding.recycler.scrollToPosition(0);
-        mPage = null;
+    private void checkMore() {
+        mBinding.recycler.post(() -> {
+            if (mScroller.isDisable() || mBinding.recycler.canScrollVertically(1) || mBinding.recycler.getScrollState() != 0 || isHome()) return;
+            getVideo(getTypeId(), String.valueOf(mScroller.addPage()));
+        });
     }
 
-    private void checkMore(int count) {
-        if (mScroller.isDisable() || count == 0 || mBinding.recycler.canScrollVertically(1) || mBinding.recycler.getScrollState() > 0 || isHome()) return;
-        getVideo(getTypeId(), String.valueOf(mScroller.addPage()));
+    public void scrollToTop() {
+        mBinding.recycler.smoothScrollToPosition(0);
     }
 
     private int findPosition() {
@@ -236,15 +237,8 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
 
     @Override
     public boolean onLongClick(Vod item) {
-        CollectActivity.start(getActivity(), item.getVodName());
+        if (item.isAction() || item.isFolder()) return false;
+        SearchActivity.start(requireActivity(), item.getName());
         return true;
-    }
-
-    @Override
-    public boolean canBack() {
-        if (mPages.isEmpty()) return true;
-        mPages.remove(mPage = getLastPage());
-        onRefresh();
-        return false;
     }
 }

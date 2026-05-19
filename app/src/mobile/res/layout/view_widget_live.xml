@@ -5,16 +5,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/error"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:background="@drawable/shape_widget_error"
         android:gravity="center"
-        android:orientation="vertical"
+        android:textColor="@color/white"
+        android:textSize="14sp"
         android:visibility="gone"
-        tools:visibility="visible">
+        tools:text="@string/error_play_url"
+        tools:visibility="visible" />
 
         <ImageView
             android:layout_width="48dp"
@@ -38,25 +40,31 @@
         android:id="@+id/progress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:orientation="vertical"
+        android:layout_gravity="top|center"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/shape_widget"
+        android:gravity="center"
+        android:orientation="horizontal"
         android:visibility="gone"
         tools:visibility="visible">
 
-        <include layout="@layout/view_progress" />
-
-        <TextView
-            android:id="@+id/traffic"
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/action"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textColor="@color/white"
-            android:textSize="12sp"
-            android:visibility="gone"
-            tools:text="120KB/s"
-            tools:visibility="visible" />
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_widget_rewind" />
 
-    </LinearLayout>
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFeatureSettings="tnum"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            tools:text="00:00:00" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
 
     <LinearLayout
         android:id="@+id/seek"
@@ -108,7 +116,7 @@
         android:visibility="gone"
         tools:visibility="visible">
 
-        <ImageView
+        <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/brightIcon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -122,9 +130,9 @@
             app:indicatorColor="@color/white"
             app:trackColor="@color/grey_500" />
 
-    </LinearLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 
-    <LinearLayout
+    <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/volume"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -136,7 +144,7 @@
         android:visibility="gone"
         tools:visibility="visible">
 
-        <ImageView
+        <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/volumeIcon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -150,9 +158,9 @@
             app:indicatorColor="@color/white"
             app:trackColor="@color/grey_500" />
 
-    </LinearLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 
-    <LinearLayout
+    <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/info"
         android:layout_width="match_parent"
         android:layout_height="56dp"
@@ -165,7 +173,7 @@
         android:visibility="gone"
         tools:visibility="visible">
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/number"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -174,15 +182,14 @@
             android:textSize="14sp"
             tools:text="005" />
 
-        <ImageView
+        <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/logo"
             android:layout_width="44dp"
             android:layout_height="33dp"
             android:layout_marginEnd="12dp"
-            android:scaleType="fitCenter"
             android:visibility="gone" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -193,7 +200,7 @@
             android:textSize="14sp"
             tools:text="民視" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/play"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -204,7 +211,7 @@
             android:textSize="14sp"
             tools:text="正在播放：食神" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/line"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -229,7 +236,7 @@
         android:visibility="gone"
         tools:visibility="visible">
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/number_pip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -238,7 +245,7 @@
             android:textSize="12sp"
             tools:text="005" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/name_pip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -247,5 +254,5 @@
             android:textSize="12sp"
             tools:text="民視" />
 
-    </LinearLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 </FrameLayout>

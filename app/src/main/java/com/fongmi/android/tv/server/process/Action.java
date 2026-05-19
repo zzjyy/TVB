@@ -9,6 +9,7 @@ import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.Device;
 import com.fongmi.android.tv.bean.History;
 import com.fongmi.android.tv.bean.Keep;
+import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.event.CastEvent;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.event.ServerEvent;
@@ -24,7 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import fi.iki.elonen.NanoHTTPD;
+import fi.iki.elonen.NanoHTTPD.IHTTPSession;
+import fi.iki.elonen.NanoHTTPD.Response;
 import okhttp3.FormBody;
 
 public class Action implements Process {
@@ -125,7 +127,7 @@ public class Action implements Process {
             FormBody.Builder body = new FormBody.Builder();
             body.add("targets", App.gson().toJson(Keep.getVod()));
             body.add("configs", App.gson().toJson(Config.findUrls()));
-            OkHttp.newCall(OkHttp.client(Constant.TIMEOUT_SYNC), device.getIp().concat("/action?do=sync&mode=0&type=keep"), body.build()).execute();
+            post(device, "keep", body);
         } catch (Exception e) {
             App.post(() -> Notify.show(e.getMessage()));
         }
@@ -137,18 +139,19 @@ public class Action implements Process {
         if (VodConfig.get().getConfig().equals(config)) {
             if (force) History.delete(config.getId());
             History.sync(targets);
+            RefreshEvent.history();
         } else {
             VodConfig.load(config, getCallback(targets));
         }
     }
 
-    private Callback getCallback(List<History> targets) {
+    private Callback getCallback(List<History> targets, boolean force, int cid) {
         return new Callback() {
             @Override
             public void success() {
-                RefreshEvent.config();
-                RefreshEvent.video();
+                if (force) History.delete(cid);
                 History.sync(targets);
+                RefreshEvent.history();
             }
 
             @Override
@@ -166,17 +169,17 @@ public class Action implements Process {
         } else {
             if (force) Keep.deleteAll();
             Keep.sync(configs, targets);
+            RefreshEvent.keep();
         }
     }
 
-    private Callback getCallback(List<Config> configs, List<Keep> targets) {
+    private Callback getCallback(List<Config> configs, List<Keep> targets, boolean force) {
         return new Callback() {
             @Override
             public void success() {
-                RefreshEvent.history();
-                RefreshEvent.config();
-                RefreshEvent.video();
+                if (force) Keep.deleteAll();
                 Keep.sync(configs, targets);
+                RefreshEvent.keep();
             }
 
             @Override

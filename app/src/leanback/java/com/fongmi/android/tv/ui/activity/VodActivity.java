@@ -2,6 +2,7 @@ package com.fongmi.android.tv.ui.activity;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,8 +12,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapter;
-import androidx.leanback.widget.ArrayObjectAdapter;
-import androidx.leanback.widget.ItemBridgeAdapter;
 import androidx.leanback.widget.OnChildViewHolderSelectedListener;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
@@ -21,10 +20,10 @@ import androidx.viewpager.widget.ViewPager;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Class;
-import com.fongmi.android.tv.bean.Filter;
 import com.fongmi.android.tv.bean.Result;
-import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.databinding.ActivityVodBinding;
+import com.fongmi.android.tv.event.RefreshEvent;
+import com.fongmi.android.tv.ui.adapter.TypeAdapter;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.fragment.VodFragment;
 import com.fongmi.android.tv.ui.presenter.TypePresenter;
@@ -32,11 +31,12 @@ import com.fongmi.android.tv.utils.KeyUtil;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.github.catvod.utils.Prefers;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
-public class VodActivity extends BaseActivity implements TypePresenter.OnClickListener {
+import java.util.Optional;
+
+public class VodActivity extends BaseActivity implements TypeAdapter.OnClickListener {
 
     private ActivityVodBinding mBinding;
     private ArrayObjectAdapter mAdapter;
@@ -79,7 +79,7 @@ public class VodActivity extends BaseActivity implements TypePresenter.OnClickLi
     }
 
     @Override
-    protected void initView() {
+    protected void initView(Bundle savedInstanceState) {
         setRecyclerView();
         setTypes();
         setPager();
@@ -91,6 +91,7 @@ public class VodActivity extends BaseActivity implements TypePresenter.OnClickLi
             @Override
             public void onPageSelected(int position) {
                 mBinding.recycler.setSelectedPosition(position);
+                mBinding.recycler.requestFocus();
             }
         });
         mBinding.recycler.addOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
@@ -102,6 +103,7 @@ public class VodActivity extends BaseActivity implements TypePresenter.OnClickLi
     }
 
     private void setRecyclerView() {
+        mBinding.recycler.requestFocus();
         mBinding.recycler.setHorizontalSpacing(ResUtil.dp2px(16));
         mBinding.recycler.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.recycler.setAdapter(new ItemBridgeAdapter(mAdapter = new ArrayObjectAdapter(new TypePresenter(this))));
@@ -114,21 +116,17 @@ public class VodActivity extends BaseActivity implements TypePresenter.OnClickLi
     }
 
     private void setTypes() {
-        Result result = getResult();
-        result.setTypes(getTypes(result));
-        for (Class item : result.getTypes()) item.setFilters(getFilter(item.getTypeId()));
-        mAdapter.setItems(result.getTypes(), null);
+        mAdapter.addAll(getResult().getTypes());
     }
 
     private void setPager() {
-        mBinding.pager.setAdapter(mPageAdapter = new PageAdapter(getSupportFragmentManager()));
+        mBinding.pager.setAdapter(new PageAdapter(getSupportFragmentManager()));
     }
 
     private void onChildSelected(@Nullable RecyclerView.ViewHolder child) {
-        if (mOldView != null) mOldView.setActivated(false);
-        if (child == null) return;
-        mOldView = child.itemView;
-        mOldView.setActivated(true);
+        if (mOldView != null) mOldView.setSelected(false);
+        if ((mOldView = child != null ? child.itemView : null) == null) return;
+        mOldView.setSelected(true);
         App.post(mRunnable, 100);
     }
 
@@ -139,14 +137,27 @@ public class VodActivity extends BaseActivity implements TypePresenter.OnClickLi
         }
     };
 
-    private void updateFilter(Class item) {
-        if (item.getFilter() == null) return;
-        getFragment().toggleFilter(item.toggleFilter());
-        mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
+    private boolean isFilterVisible() {
+        return Optional.ofNullable(getType()).map(Class::getFilter).orElse(false);
     }
 
-    private VodFragment getFragment() {
-        return (VodFragment) mPageAdapter.instantiateItem(mBinding.pager, mBinding.pager.getCurrentItem());
+    private void updateFilter() {
+        Optional.ofNullable(getType()).ifPresent(this::updateFilter);
+    }
+
+    private void updateFilter(Class item) {
+        item.setFilter(!item.getFilter());
+        getFragment().toggleFilter(item.getFilter());
+        mAdapter.notifyItemRangeChanged(mAdapter.indexOf(item), 1);
+    }
+
+    public void closeFilter() {
+        if (isFilterVisible()) updateFilter();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onRefreshEvent(RefreshEvent event) {
+        if (event.getType() == RefreshEvent.Type.CATEGORY) getFragment().onRefresh();
     }
 
     private void setCoolDown() {
@@ -194,7 +205,7 @@ public class VodActivity extends BaseActivity implements TypePresenter.OnClickLi
 
         @Override
         public int getCount() {
-            return mAdapter.size();
+            return mAdapter.getItemCount();
         }
 
         @Override

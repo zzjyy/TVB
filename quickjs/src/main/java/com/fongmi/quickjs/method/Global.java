@@ -32,6 +32,13 @@ public class Global {
     private final QuickJSContext ctx;
     private final Timer timer;
 
+    private Global(QuickJSContext ctx, ExecutorService executor) {
+        this.executor = executor;
+        this.timer = new Timer();
+        this.ctx = ctx;
+        setProperty();
+    }
+
     public static Global create(QuickJSContext ctx, ExecutorService executor) {
         return new Global(ctx, executor);
     }

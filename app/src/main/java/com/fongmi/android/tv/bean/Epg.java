@@ -50,6 +50,22 @@ public class Epg {
         this.key = key;
     }
 
+    public static Epg create(String key, String date) {
+        Epg item = new Epg();
+        item.setKey(key);
+        item.setDate(date);
+        item.setList(new ArrayList<>());
+        return item;
+    }
+
+    public String getKey() {
+        return TextUtils.isEmpty(key) ? "" : key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     public String getDate() {
         return TextUtils.isEmpty(date) ? "" : date;
     }

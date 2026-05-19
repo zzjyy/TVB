@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -26,22 +27,23 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Class;
-import com.fongmi.android.tv.bean.Hot;
+import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.bean.Value;
 import com.fongmi.android.tv.databinding.FragmentVodBinding;
 import com.fongmi.android.tv.event.CastEvent;
+import com.fongmi.android.tv.event.ConfigEvent;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.event.StateEvent;
 import com.fongmi.android.tv.impl.Callback;
-import com.fongmi.android.tv.impl.FilterCallback;
-import com.fongmi.android.tv.impl.SiteCallback;
+import com.fongmi.android.tv.impl.ConfigListener;
+import com.fongmi.android.tv.impl.FilterListener;
+import com.fongmi.android.tv.impl.SiteListener;
 import com.fongmi.android.tv.model.SiteViewModel;
-import com.fongmi.android.tv.ui.activity.CollectActivity;
 import com.fongmi.android.tv.ui.activity.HistoryActivity;
 import com.fongmi.android.tv.ui.activity.KeepActivity;
-import com.fongmi.android.tv.ui.activity.VideoActivity;
+import com.fongmi.android.tv.ui.activity.SearchActivity;
 import com.fongmi.android.tv.ui.adapter.TypeAdapter;
 import com.fongmi.android.tv.ui.base.BaseFragment;
 import com.fongmi.android.tv.ui.dialog.FilterDialog;
@@ -58,23 +60,16 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.Call;
-import okhttp3.Headers;
-import okhttp3.Response;
-
-public class VodFragment extends BaseFragment implements SiteCallback, FilterCallback, TypeAdapter.OnClickListener {
+public class VodFragment extends BaseFragment implements ConfigListener, SiteListener, FilterListener, TypeAdapter.OnClickListener {
 
     private FragmentVodBinding mBinding;
     private SiteViewModel mViewModel;
     private TypeAdapter mAdapter;
-    private Runnable mRunnable;
-    private List<String> mHots;
     private Result mResult;
 
     public static VodFragment newInstance() {
@@ -97,6 +92,7 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
     @Override
     protected void initView() {
         EventBus.getDefault().register(this);
+        mBinding.title.setSelected(true);
         setRecyclerView();
         setViewModel();
         showProgress();
@@ -111,8 +107,8 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
         mBinding.top.setOnClickListener(this::onTop);
         mBinding.link.setOnClickListener(this::onLink);
         mBinding.logo.setOnClickListener(this::onLogo);
-        mBinding.keep.setOnClickListener(this::onKeep);
-        mBinding.retry.setOnClickListener(this::onRetry);
+        mBinding.link.setOnClickListener(this::onLink);
+        mBinding.title.setOnClickListener(this::onSite);
         mBinding.filter.setOnClickListener(this::onFilter);
         mBinding.search.setOnClickListener(this::onSearch);
         mBinding.history.setOnClickListener(this::onHistory);
@@ -121,7 +117,7 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
             @Override
             public void onPageSelected(int position) {
                 mBinding.type.smoothScrollToPosition(position);
-                mAdapter.setActivated(position);
+                mAdapter.setSelected(position);
                 setFabVisible(position);
             }
         });
@@ -168,11 +164,11 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
     }
 
     private void setAdapter(Result result) {
-        mAdapter.addAll(handle(result));
+        mAdapter.addAll(mResult = result);
         mBinding.pager.getAdapter().notifyDataSetChanged();
         setFabVisible(0);
         hideProgress();
-        checkRetry();
+        showContent();
     }
 
     private void setFabVisible(int position) {
@@ -191,8 +187,10 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
         }
     }
 
-    private void checkRetry() {
-        mBinding.retry.setVisibility(mAdapter.getItemCount() == 0 ? View.VISIBLE : View.GONE);
+    private void setTitle() {
+        List<String> items = Arrays.asList(getHome().getName(), getConfig().getName(), getString(R.string.app_name));
+        Optional<String> optional = items.stream().filter(s -> !TextUtils.isEmpty(s)).findFirst();
+        optional.ifPresent(s -> mBinding.title.setText(s));
     }
 
     private void onTop(View view) {
@@ -208,40 +206,40 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
     }
 
     private void onLogo(View view) {
-        SiteDialog.create(this).change().show();
+        HistoryDialog.create().vod().readOnly().show(this);
     }
 
-    private void onKeep(View view) {
-        KeepActivity.start(getActivity());
-    }
-
-    private void onRetry(View view) {
-        homeContent();
+    private void onSite(View view) {
+        SiteDialog.create().change().show(this);
     }
 
     private void onFilter(View view) {
         if (mAdapter.getItemCount() > 0) FilterDialog.create().filter(mAdapter.get(mBinding.pager.getCurrentItem()).getFilters()).show(this);
     }
 
-    private void onHot(View view) {
-        CollectActivity.start(getActivity());
-    }
-
-    private void onSearch(View view) {
-        CollectActivity.start(getActivity(), mBinding.hot.getText().toString());
-    }
-
-    private void onHistory(View view) {
-        HistoryActivity.start(getActivity());
+    private boolean onMenuItemClick(MenuItem item) {
+        if (item.getItemId() == R.id.keep) KeepActivity.start(requireActivity());
+        else if (item.getItemId() == R.id.search) SearchActivity.start(requireActivity());
+        else if (item.getItemId() == R.id.history) HistoryActivity.start(requireActivity());
+        return true;
     }
 
     private void showProgress() {
-        mBinding.retry.setVisibility(View.GONE);
         mBinding.progress.getRoot().setVisibility(View.VISIBLE);
     }
 
     private void hideProgress() {
         mBinding.progress.getRoot().setVisibility(View.GONE);
+    }
+
+    private void hideContent() {
+        mBinding.type.setVisibility(View.INVISIBLE);
+        mBinding.pager.setVisibility(View.INVISIBLE);
+    }
+
+    private void showContent() {
+        mBinding.type.setVisibility(View.VISIBLE);
+        mBinding.pager.setVisibility(View.VISIBLE);
     }
 
     private void homeContent() {
@@ -284,9 +282,8 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
             case CONFIG:
                 setLogo();
                 break;
-            case VIDEO:
-            case SIZE:
-                homeContent();
+            case PROGRESS:
+                showProgress();
                 break;
         }
     }
@@ -315,13 +312,14 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
     }
 
     @Override
-    public void onChanged() {
+    public void setSite(Site item) {
+        VodConfig.get().setHome(item);
     }
 
     @Override
     public void onItemClick(int position, Class item) {
         mBinding.pager.setCurrentItem(position);
-        mAdapter.setActivated(position);
+        mAdapter.setSelected(position);
     }
 
     @Override
@@ -338,15 +336,15 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
 
     @Override
     public boolean canBack() {
-        if (mBinding.pager.getAdapter() == null) return true;
-        if (mBinding.pager.getAdapter().getCount() == 0) return true;
-        return getFragment().canBack();
+        if (mBinding.pager.getAdapter() == null || mBinding.pager.getAdapter().getCount() == 0) return true;
+        if (!getFragment().canBack()) return true;
+        getFragment().goBack();
+        return false;
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        App.removeCallbacks(mRunnable);
         EventBus.getDefault().unregister(this);
     }
 

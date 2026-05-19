@@ -13,6 +13,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
+import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.utils.KeyUtil;
+import com.fongmi.android.tv.utils.ResUtil;
+
 public class CustomMovement extends ScrollingMovementMethod {
 
     private static final int CLICK = 1;
@@ -27,9 +31,10 @@ public class CustomMovement extends ScrollingMovementMethod {
     }
 
     public static void bind(TextView view) {
-        Editable e = new Editable.Factory().newEditable(view.getText());
-        ClickableSpan[] spans = e.getSpans(0, e.length(), ClickableSpan.class);
-        view.setMovementMethod(spans.length > 0 ? CustomMovement.getInstance() : null);
+        CharSequence text = view.getText();
+        boolean hasLinks = text instanceof Spannable && ((Spannable) text).getSpans(0, text.length(), ClickableSpan.class).length > 0;
+        view.setMovementMethod(hasLinks ? CustomMovement.getInstance() : null);
+        if (hasLinks) view.setHighlightColor(ResUtil.getColor(R.color.white_30));
     }
 
     @Override
@@ -43,7 +48,7 @@ public class CustomMovement extends ScrollingMovementMethod {
             case KeyEvent.KEYCODE_DPAD_CENTER:
             case KeyEvent.KEYCODE_ENTER:
                 if (KeyEvent.metaStateHasNoModifiers(movementMetaState)) {
-                    if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0 && action(CLICK, widget, buffer)) {
+                    if (KeyUtil.isActionDown(event) && event.getRepeatCount() == 0 && action(CLICK, widget, buffer)) {
                         return true;
                     }
                 }
@@ -52,105 +57,91 @@ public class CustomMovement extends ScrollingMovementMethod {
         return super.handleMovementKey(widget, buffer, keyCode, movementMetaState, event);
     }
 
-    private void findFocus(TextView widget, int direction) {
+    private boolean findFocus(TextView widget, int direction) {
         View view = widget.focusSearch(direction);
-        if (view != null) view.requestFocus();
+        if (view == null) return false;
+        view.requestFocus();
+        return true;
     }
 
     @Override
     protected boolean up(TextView widget, Spannable buffer) {
         if (action(UP, widget, buffer)) return true;
-        findFocus(widget, View.FOCUS_UP);
+        if (findFocus(widget, View.FOCUS_UP)) return true;
         return super.up(widget, buffer);
     }
 
     @Override
     protected boolean down(TextView widget, Spannable buffer) {
         if (action(DOWN, widget, buffer)) return true;
-        findFocus(widget, View.FOCUS_DOWN);
+        if (findFocus(widget, View.FOCUS_DOWN)) return true;
         return super.down(widget, buffer);
     }
 
     @Override
     protected boolean left(TextView widget, Spannable buffer) {
-        if (action(UP, widget, buffer)) return true;
-        findFocus(widget, View.FOCUS_LEFT);
-        return super.left(widget, buffer);
+        action(UP, widget, buffer);
+        return true;
     }
 
     @Override
     protected boolean right(TextView widget, Spannable buffer) {
-        if (action(DOWN, widget, buffer)) return true;
-        findFocus(widget, View.FOCUS_RIGHT);
-        return super.right(widget, buffer);
+        action(DOWN, widget, buffer);
+        return true;
     }
 
     private boolean action(int what, TextView widget, Spannable buffer) {
         Layout layout = widget.getLayout();
-        int padding = widget.getTotalPaddingTop() + widget.getTotalPaddingBottom();
-        int areaTop = widget.getScrollY();
-        int areaBot = areaTop + widget.getHeight() - padding;
-        int lineTop = layout.getLineForVertical(areaTop);
-        int lineBot = layout.getLineForVertical(areaBot);
-        int first = layout.getLineStart(lineTop);
-        int last = layout.getLineEnd(lineBot);
-        ClickableSpan[] candidates = buffer.getSpans(first, last, ClickableSpan.class);
+        if (layout == null) return false;
         int a = Selection.getSelectionStart(buffer);
         int b = Selection.getSelectionEnd(buffer);
         int selStart = Math.min(a, b);
         int selEnd = Math.max(a, b);
-        if (selStart < 0) {
-            if (buffer.getSpanStart(FROM_BELOW) >= 0) {
-                selStart = selEnd = buffer.length();
-            }
-        }
+        if (selStart < 0 && buffer.getSpanStart(FROM_BELOW) >= 0) selStart = selEnd = buffer.length();
+        if (what == CLICK) return doClick(buffer, widget, selStart, selEnd);
+        int padding = widget.getTotalPaddingTop() + widget.getTotalPaddingBottom();
+        int first = layout.getLineStart(layout.getLineForVertical(widget.getScrollY()));
+        int last = layout.getLineEnd(layout.getLineForVertical(widget.getScrollY() + widget.getHeight() - padding));
         if (selStart > last) selStart = selEnd = Integer.MAX_VALUE;
         if (selEnd < first) selStart = selEnd = -1;
-        switch (what) {
-            case CLICK:
-                if (selStart == selEnd) return false;
-                ClickableSpan[] links = buffer.getSpans(selStart, selEnd, ClickableSpan.class);
-                if (links.length != 1) return false;
-                ClickableSpan link = links[0];
-                link.onClick(widget);
-                break;
-            case UP:
-                int bestStart, bestEnd;
-                bestStart = -1;
-                bestEnd = -1;
-                for (ClickableSpan candidate : candidates) {
-                    int end = buffer.getSpanEnd(candidate);
-                    if (end < selEnd || selStart == selEnd) {
-                        if (end > bestEnd) {
-                            bestStart = buffer.getSpanStart(candidate);
-                            bestEnd = end;
-                        }
-                    }
-                }
-                if (bestStart >= 0) {
-                    Selection.setSelection(buffer, bestEnd, bestStart);
-                    return true;
-                }
-                break;
-            case DOWN:
-                bestStart = Integer.MAX_VALUE;
-                bestEnd = Integer.MAX_VALUE;
-                for (ClickableSpan candidate : candidates) {
-                    int start = buffer.getSpanStart(candidate);
-                    if (start > selStart || selStart == selEnd) {
-                        if (start < bestStart) {
-                            bestStart = start;
-                            bestEnd = buffer.getSpanEnd(candidate);
-                        }
-                    }
-                }
-                if (bestEnd < Integer.MAX_VALUE) {
-                    Selection.setSelection(buffer, bestStart, bestEnd);
-                    return true;
-                }
-                break;
+        ClickableSpan[] candidates = buffer.getSpans(first, last, ClickableSpan.class);
+        return what == UP ? doUp(buffer, candidates, selStart, selEnd) : doDown(buffer, candidates, selStart, selEnd);
+    }
+
+    private boolean doClick(Spannable buffer, TextView widget, int selStart, int selEnd) {
+        if (selStart == selEnd) return false;
+        ClickableSpan[] links = buffer.getSpans(selStart, selEnd, ClickableSpan.class);
+        if (links.length != 1) return false;
+        links[0].onClick(widget);
+        return true;
+    }
+
+    private boolean doUp(Spannable buffer, ClickableSpan[] candidates, int selStart, int selEnd) {
+        int bestStart = -1, bestEnd = -1;
+        for (ClickableSpan candidate : candidates) {
+            int end = buffer.getSpanEnd(candidate);
+            if ((end < selEnd || selStart == selEnd) && end > bestEnd) {
+                bestStart = buffer.getSpanStart(candidate);
+                bestEnd = end;
+            }
         }
-        return false;
+        if (bestStart < 0) return false;
+        Selection.setSelection(buffer, bestEnd, bestStart);
+        return true;
+    }
+
+    private boolean doDown(Spannable buffer, ClickableSpan[] candidates, int selStart, int selEnd) {
+        int bestStart = Integer.MAX_VALUE, bestEnd = Integer.MAX_VALUE;
+        for (ClickableSpan candidate : candidates) {
+            int start = buffer.getSpanStart(candidate);
+            if ((start > selStart || selStart == selEnd) && start < bestStart) {
+                bestStart = start;
+                bestEnd = buffer.getSpanEnd(candidate);
+            }
+        }
+        if (bestEnd == Integer.MAX_VALUE) return false;
+        Selection.setSelection(buffer, bestStart, bestEnd);
+        return true;
     }
 
     @Override
@@ -184,7 +175,8 @@ public class CustomMovement extends ScrollingMovementMethod {
                 }
             }
         }
-        return super.onTouchEvent(widget, buffer, event);
+        if (action == MotionEvent.ACTION_UP) links[0].onClick(widget);
+        return true;
     }
 
     @Override
@@ -196,7 +188,7 @@ public class CustomMovement extends ScrollingMovementMethod {
     @Override
     public void onTakeFocus(TextView view, Spannable text, int dir) {
         Selection.removeSelection(text);
-        if ((dir & View.FOCUS_BACKWARD) != 0) {
+        if (dir == View.FOCUS_BACKWARD) {
             text.setSpan(FROM_BELOW, 0, 0, Spannable.SPAN_POINT_POINT);
         } else {
             text.removeSpan(FROM_BELOW);

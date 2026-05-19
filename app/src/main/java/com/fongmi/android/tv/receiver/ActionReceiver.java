@@ -15,6 +15,9 @@ public class ActionReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        ActionEvent.send(intent.getAction());
+        if (!PlaybackService.isRunning() || intent.getAction() == null) return;
+        Intent serviceIntent = new Intent(context, PlaybackService.class);
+        serviceIntent.setAction(intent.getAction());
+        context.startService(serviceIntent);
     }
 }

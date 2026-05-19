@@ -1,5 +1,6 @@
 package com.fongmi.android.tv.model;
 
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
@@ -23,9 +24,10 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class LiveViewModel extends ViewModel {
 
@@ -62,6 +64,9 @@ public class LiveViewModel extends ViewModel {
             setTimeZone(item);
             verify(item);
             return item;
+        }, live::postValue, error -> {
+            if (error instanceof ExtractException) url.postValue(Result.error(error.getMessage()));
+            else live.postValue(new Live());
         });
     }
 
@@ -168,5 +173,19 @@ public class LiveViewModel extends ViewModel {
         if (executor2 != null) executor2.shutdownNow();
         if (executor3 != null) executor3.shutdownNow();
         if (executor4 != null) executor4.shutdownNow();
+    }
+
+    private enum TaskType {
+
+        LIVE(Constant.TIMEOUT_LIVE),
+        EPG(Constant.TIMEOUT_EPG),
+        XML(Constant.TIMEOUT_XML),
+        URL(Constant.TIMEOUT_PARSE_LIVE);
+
+        final long timeout;
+
+        TaskType(long timeout) {
+            this.timeout = timeout;
+        }
     }
 }

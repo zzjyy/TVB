@@ -6,7 +6,6 @@ import androidx.collection.ArrayMap;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.config.VodConfig;
@@ -14,29 +13,19 @@ import com.fongmi.android.tv.bean.Episode;
 import com.fongmi.android.tv.bean.Flag;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Site;
-import com.fongmi.android.tv.bean.Url;
-import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.exception.ExtractException;
-import com.fongmi.android.tv.player.Source;
-import com.fongmi.android.tv.utils.ResUtil;
-import com.fongmi.android.tv.utils.Sniffer;
-import com.github.catvod.crawler.Spider;
-import com.github.catvod.crawler.SpiderDebug;
-import com.github.catvod.net.OkHttp;
-import com.github.catvod.utils.Trans;
-import com.github.catvod.utils.Util;
+import com.fongmi.android.tv.utils.Task;
+import com.google.common.util.concurrent.FluentFuture;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import okhttp3.Call;
-import okhttp3.Response;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SiteViewModel extends ViewModel {
 
@@ -262,30 +251,93 @@ public class SiteViewModel extends ViewModel {
         return result;
     }
 
-    private void post(Site site, Result result) {
-        if (result.getList().isEmpty()) return;
-        for (Vod vod : result.getList()) vod.setSite(site);
-        this.search.postValue(result);
+    public LiveData<Result> getSearch() {
+        return search;
     }
 
-    private void execute(MutableLiveData<Result> result, Callable<Result> callable) {
-        if (executor != null) executor.shutdownNow();
-        executor = Executors.newFixedThreadPool(2);
-        executor.execute(() -> {
-            try {
-                if (Thread.interrupted()) return;
-                result.postValue(executor.submit(callable).get(Constant.TIMEOUT_VOD, TimeUnit.MILLISECONDS));
-            } catch (Throwable e) {
-                if (e instanceof InterruptedException || Thread.interrupted()) return;
-                if (e.getCause() instanceof ExtractException) result.postValue(Result.error(e.getCause().getMessage()));
-                else result.postValue(Result.empty());
-                e.printStackTrace();
-            }
+    public LiveData<Result> getAction() {
+        return action;
+    }
+
+    public SiteViewModel init() {
+        search.setValue(null);
+        result.setValue(null);
+        player.setValue(null);
+        action.setValue(null);
+        return this;
+    }
+
+    public void homeContent() {
+        execute(TaskType.RESULT, result, () -> SiteApi.homeContent(VodConfig.get().getHome()));
+    }
+
+    public void categoryContent(String key, String tid, String page, boolean filter, HashMap<String, String> extend) {
+        execute(TaskType.RESULT, result, () -> SiteApi.categoryContent(key, tid, page, filter, extend));
+    }
+
+    public void action(String key, String act) {
+        execute(TaskType.ACTION, action, () -> SiteApi.action(key, act));
+    }
+
+    public void detailContent(String key, String id) {
+        execute(TaskType.RESULT, result, () -> SiteApi.detailContent(key, id));
+    }
+
+    public void playerContent(String key, String flag, String id) {
+        execute(TaskType.PLAYER, player, () -> SiteApi.playerContent(key, flag, id));
+    }
+
+    public void searchContent(Site site, String keyword, boolean quick, String page) {
+        execute(TaskType.RESULT, result, SearchTask.create(site, keyword, quick, page));
+    }
+
+    public void searchContent(List<Site> sites, String keyword, boolean quick) {
+        int epoch = stopSearch();
+        sites.forEach(site -> {
+            FluentFuture<Result> future = FluentFuture.from(Task.largeExecutor().submit(SearchTask.create(site, keyword, quick))).withTimeout(Constant.TIMEOUT_SEARCH, TimeUnit.MILLISECONDS, Task.scheduler());
+            searchFuture.add(future);
+            future.addCallback(Task.callback(
+                    result -> {
+                        if (searchEpoch.get() == epoch) search.postValue(result);
+                    }
+            ), MoreExecutors.directExecutor());
         });
+    }
+
+    private void execute(TaskType type, MutableLiveData<Result> liveData, Callable<Result> callable) {
+        AtomicInteger taskId = Objects.requireNonNull(taskIds.get(type));
+        int currentId = taskId.incrementAndGet();
+        ListenableFuture<?> old = futures.get(type);
+        if (old != null) old.cancel(true);
+        FluentFuture<Result> future = FluentFuture.from(Task.executor().submit(callable)).withTimeout(Constant.TIMEOUT_VOD, TimeUnit.MILLISECONDS, Task.scheduler());
+        futures.put(type, future);
+        future.addCallback(Task.callback(
+                result -> {
+                    if (taskId.get() == currentId) liveData.postValue(result);
+                },
+                error -> {
+                    if (taskId.get() != currentId) return;
+                    if (error instanceof CancellationException) return;
+                    if (error instanceof ExtractException) liveData.postValue(Result.error(error.getMessage()));
+                    else liveData.postValue(Result.empty());
+                    error.printStackTrace();
+                }
+        ), MoreExecutors.directExecutor());
+    }
+
+    public int stopSearch() {
+        int epoch = searchEpoch.incrementAndGet();
+        searchFuture.forEach(future -> future.cancel(true));
+        searchFuture.clear();
+        return epoch;
     }
 
     @Override
     protected void onCleared() {
-        if (executor != null) executor.shutdownNow();
+        super.onCleared();
+        stopSearch();
+        futures.values().forEach(future -> future.cancel(true));
     }
+
+    private enum TaskType {RESULT, PLAYER, ACTION}
 }

@@ -1,7 +1,5 @@
 package com.fongmi.android.tv.ui.custom;
 
-import android.annotation.SuppressLint;
-
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.ActivitySearchBinding;
 import com.fongmi.android.tv.ui.adapter.KeyboardAdapter;
@@ -39,7 +37,6 @@ public class CustomKeyboard implements KeyboardAdapter.OnClickListener {
     }
 
     @Override
-    @SuppressLint("NonConstantResourceId")
     public void onIconClick(int resId) {
         StringBuilder sb = new StringBuilder(binding.keyword.getText().toString());
         int cursor = binding.keyword.getSelectionStart();

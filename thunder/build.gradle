@@ -1,5 +1,5 @@
 plugins {
-    id 'com.android.library'
+    alias libs.plugins.android.library
 }
 
 android {
@@ -8,11 +8,12 @@ android {
     compileSdk 35
 
     defaultConfig {
-        minSdk 21
-        targetSdk 28
+        minSdk libs.versions.minSdk.get().toInteger()
+        targetSdk libs.versions.targetSdk.get().toInteger()
     }
 }
 
 dependencies {
     implementation project(':catvod')
+    coreLibraryDesugaring libs.desugar
 }

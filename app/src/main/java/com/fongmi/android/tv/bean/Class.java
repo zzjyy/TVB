@@ -12,13 +12,12 @@ import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.Text;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 @Root(strict = false)
-public class Class implements Parcelable {
+public class Class implements Parcelable, Diffable<Class> {
 
     @Attribute(name = "id", required = false)
     @SerializedName(value = "type_id", alternate = "id")
@@ -47,6 +46,17 @@ public class Class implements Parcelable {
     private boolean activated;
 
     public Class() {
+    }
+
+    protected Class(Parcel in) {
+        this.typeId = in.readString();
+        this.typeName = in.readString();
+        this.typeFlag = in.readString();
+        this.filter = in.readByte() != 0;
+        this.land = (Integer) in.readValue(Integer.class.getClassLoader());
+        this.circle = (Integer) in.readValue(Integer.class.getClassLoader());
+        this.ratio = (Float) in.readValue(Float.class.getClassLoader());
+        this.selected = in.readByte() != 0;
     }
 
     public static Class objectFrom(String json) {
@@ -82,9 +92,7 @@ public class Class implements Parcelable {
     }
 
     public void setFilters(List<Filter> filters) {
-        if (filters == null || filters.isEmpty()) return;
         this.filters = filters;
-        this.setFilter(false);
     }
 
     public int getLand() {
@@ -103,21 +111,28 @@ public class Class implements Parcelable {
         this.filter = filter;
     }
 
-    public Boolean getFilter() {
+    public int getCircle() {
+        return circle == null ? 0 : circle;
+    }
+
+    public float getRatio() {
+        return ratio == null ? 0 : ratio;
+    }
+
+    public boolean getFilter() {
         return filter;
     }
 
-    public boolean isActivated() {
-        return activated;
+    public void setFilter(boolean filter) {
+        this.filter = filter;
     }
 
-    public void setActivated(boolean activated) {
-        this.activated = activated;
+    public boolean isSelected() {
+        return selected;
     }
 
-    public boolean toggleFilter() {
-        setFilter(!getFilter());
-        return getFilter();
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 
     public boolean isHome() {
@@ -140,11 +155,15 @@ public class Class implements Parcelable {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Class)) return false;
-        Class it = (Class) obj;
-        return getTypeId().equals(it.getTypeId());
+        if (!(obj instanceof Class it)) return false;
+        return Objects.equals(getTypeId(), it.getTypeId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getTypeId());
     }
 
     @Override

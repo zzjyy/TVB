@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
@@ -41,6 +42,13 @@ public class Config {
     private String home;
     @SerializedName("parse")
     private String parse;
+
+    @Ignore
+    @SerializedName("notice")
+    private String notice;
+    @Ignore
+    @SerializedName("danmaku")
+    private String danmaku;
 
     public static List<Config> arrayFrom(String str) {
         Type listType = new TypeToken<List<Config>>() {}.getType();
@@ -242,6 +250,124 @@ public class Config {
         return item == null ? create(type, depot.getUrl(), depot.getName()) : item.type(type).name(depot.getName());
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getJson() {
+        return json;
+    }
+
+    public void setJson(String json) {
+        this.json = json;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getLogo() {
+        return logo;
+    }
+
+    public void setLogo(String logo) {
+        this.logo = logo;
+    }
+
+    public String getHome() {
+        return home;
+    }
+
+    public void setHome(String home) {
+        this.home = home;
+    }
+
+    public String getParse() {
+        return parse;
+    }
+
+    public void setParse(String parse) {
+        this.parse = parse;
+    }
+
+    public long getTime() {
+        return time;
+    }
+
+    public void setTime(long time) {
+        this.time = time;
+    }
+
+    public String getNotice() {
+        return notice;
+    }
+
+    public void setNotice(String notice) {
+        this.notice = notice;
+    }
+
+    public String getDanmaku() {
+        return danmaku;
+    }
+
+    public void setDanmaku(String danmaku) {
+        this.danmaku = danmaku;
+    }
+
+    public Config type(int type) {
+        setType(type);
+        return this;
+    }
+
+    public Config url(String url) {
+        setUrl(url);
+        return this;
+    }
+
+    public Config json(String json) {
+        setJson(json);
+        return this;
+    }
+
+    public Config name(String name) {
+        setName(name);
+        return this;
+    }
+
+    public boolean isEmpty() {
+        return TextUtils.isEmpty(getUrl());
+    }
+
+    public String getDesc() {
+        if (!TextUtils.isEmpty(getName())) return getName();
+        if (!TextUtils.isEmpty(getUrl())) return getUrl();
+        return "";
+    }
+
     public Config insert() {
         if (isEmpty()) return this;
         setId(Math.toIntExact(AppDatabase.get().getConfigDao().insert(this)));
@@ -274,10 +400,14 @@ public class Config {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public String toString() {
+        return App.gson().toJson(this);
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Config)) return false;
-        Config it = (Config) obj;
+        if (!(obj instanceof Config it)) return false;
         return getId() == it.getId();
     }
 }

@@ -2,13 +2,15 @@ package com.fongmi.android.tv.bean;
 
 import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
 import androidx.media3.common.C;
-import androidx.media3.common.MediaItem;
 
 import com.github.catvod.utils.Json;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class Drm {
@@ -22,20 +24,22 @@ public class Drm {
     @SerializedName("header")
     private JsonElement header;
 
-    public static Drm create(String key, String type) {
-        return new Drm(key, type);
-    }
-
-    private Drm(String key, String type) {
+    private Drm(String key, String type, Map<String, String> header, boolean forceKey) {
         this.key = key;
         this.type = type;
+        this.header = header;
+        this.forceKey = forceKey;
     }
 
-    private String getKey() {
+    public static Drm create(String key, String type, Map<String, String> header, boolean forceKey) {
+        return new Drm(key, type, header, forceKey);
+    }
+
+    public String getKey() {
         return TextUtils.isEmpty(key) ? "" : key;
     }
 
-    private String getType() {
+    public String getType() {
         return TextUtils.isEmpty(type) ? "" : type;
     }
 

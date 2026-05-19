@@ -11,6 +11,7 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.databinding.AdapterKeyboardIconBinding;
 import com.fongmi.android.tv.databinding.AdapterKeyboardTextBinding;
+import com.fongmi.android.tv.setting.Setting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,7 +93,7 @@ public class KeyboardAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
         @Override
         public void onClick(View view) {
-            mListener.onTextClick(mItems.get(getLayoutPosition()).toString());
+            listener.onTextClick(mItems.get(getLayoutPosition()).toString());
         }
     }
 
@@ -109,12 +110,12 @@ public class KeyboardAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
         @Override
         public void onClick(View view) {
-            mListener.onIconClick((int) mItems.get(getLayoutPosition()));
+            listener.onIconClick((int) mItems.get(getLayoutPosition()));
         }
 
         @Override
         public boolean onLongClick(View view) {
-            return mListener.onLongClick((int) mItems.get(getLayoutPosition()));
+            return listener.onLongClick((int) mItems.get(getLayoutPosition()));
         }
     }
 }

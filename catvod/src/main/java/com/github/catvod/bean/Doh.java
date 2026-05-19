@@ -4,6 +4,7 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.github.catvod.crawler.R;
 import com.google.gson.Gson;
@@ -40,9 +41,13 @@ public class Doh {
     }
 
     public static List<Doh> arrayFrom(JsonElement element) {
-        Type listType = new TypeToken<List<Doh>>() {}.getType();
-        List<Doh> items = new Gson().fromJson(element, listType);
-        return items == null ? new ArrayList<>() : items;
+        try {
+            Type listType = new TypeToken<List<Doh>>() {}.getType();
+            List<Doh> items = new Gson().fromJson(element, listType);
+            return items == null ? new ArrayList<>() : items;
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
     }
 
     public Doh name(String name) {
@@ -78,11 +83,15 @@ public class Doh {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Doh)) return false;
-        Doh it = (Doh) obj;
+        if (!(obj instanceof Doh it)) return false;
         return getUrl().equals(it.getUrl());
+    }
+
+    @Override
+    public int hashCode() {
+        return getUrl().hashCode();
     }
 
     @NonNull

@@ -1,6 +1,7 @@
 package com.tvbus.engine;
 
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.github.catvod.Init;
 
@@ -161,4 +162,6 @@ public class TVCore implements Runnable {
     private native void setUsername(long handle, String str);
 
     private native void setListener(long handle, Listener listener);
+
+    private native void setOption(long handle, String kev, String value);
 }

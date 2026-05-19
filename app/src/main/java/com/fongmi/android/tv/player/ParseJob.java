@@ -27,27 +27,30 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import okhttp3.Headers;
+import okhttp3.Response;
 
 public class ParseJob implements ParseCallback {
 
+    private final AtomicBoolean done = new AtomicBoolean();
     private final List<CustomWebView> webViews;
     private ExecutorService executor;
     private ExecutorService infinite;
     private ParseCallback callback;
     private Parse parse;
 
-    public static ParseJob create(ParseCallback callback) {
-        return new ParseJob(callback);
-    }
-
-    public ParseJob(ParseCallback callback) {
-        this.executor = Executors.newFixedThreadPool(2);
+    private ParseJob(ParseCallback callback) {
+        this.executor = Executors.newSingleThreadExecutor();
         this.infinite = Executors.newCachedThreadPool();
         this.webViews = new ArrayList<>();
         this.callback = callback;
+    }
+
+    public static ParseJob create(ParseCallback callback) {
+        return new ParseJob(callback);
     }
 
     public ParseJob start(Result result, boolean useParse) {
@@ -72,13 +75,10 @@ public class ParseJob implements ParseCallback {
     }
 
     private void execute(Result result) {
-        executor.execute(() -> {
-            try {
-                executor.submit(getTask(result)).get(Constant.TIMEOUT_PARSE_DEF, TimeUnit.MILLISECONDS);
-            } catch (Throwable e) {
-                onParseError();
-            }
-        });
+        Future<?> task = executor.submit(getTask(result));
+        Task.schedule(() -> {
+            if (task.cancel(true)) onParseError();
+        }, Constant.TIMEOUT_PARSE_DEF, TimeUnit.MILLISECONDS);
     }
 
     private Runnable getTask(Result result) {
@@ -93,16 +93,16 @@ public class ParseJob implements ParseCallback {
 
     private void doInBackground(String key, String webUrl, String flag) throws Throwable {
         switch (parse.getType()) {
-            case 0: //嗅探
+            case 0:
                 startWeb(key, parse, webUrl);
                 break;
-            case 1: //Json
+            case 1:
                 jsonParse(parse, webUrl, true);
                 break;
-            case 2: //Json擴展
+            case 2:
                 jsonExtend(webUrl);
                 break;
-            case 3: //Json聚合
+            case 3:
                 jsonMix(webUrl, flag);
                 break;
             case 4: //超級解析
@@ -162,7 +162,7 @@ public class ParseJob implements ParseCallback {
     }
 
     private void checkResult(Result result) {
-        result.setHeader(parse.getExt().getHeader());
+        result.setHeader(parse.getHeader());
         if (result.getUrl().isEmpty()) onParseError();
         else if (result.getParse() == 1) startWeb(result.getHeaders(), UrlUtil.convert(result.getUrl().v()));
         else onParseSuccess(result.getHeaders(), result.getUrl().v(), result.getJxFrom());
@@ -195,6 +195,7 @@ public class ParseJob implements ParseCallback {
 
     @Override
     public void onParseSuccess(Map<String, String> headers, String url, String from) {
+        if (!done.compareAndSet(false, true)) return;
         App.post(() -> {
             if (callback != null) callback.onParseSuccess(headers, url, from);
             stop();
@@ -203,6 +204,7 @@ public class ParseJob implements ParseCallback {
 
     @Override
     public void onParseError() {
+        if (!done.compareAndSet(false, true)) return;
         App.post(() -> {
             if (callback != null) callback.onParseError();
             stop();
@@ -220,6 +222,7 @@ public class ParseJob implements ParseCallback {
         infinite = null;
         executor = null;
         callback = null;
+        done.set(true);
         stopWeb();
     }
 }

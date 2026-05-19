@@ -1,5 +1,9 @@
 package com.fongmi.android.tv.server.process;
 
+import static fi.iki.elonen.NanoHTTPD.MIME_PLAINTEXT;
+import static fi.iki.elonen.NanoHTTPD.getMimeTypeForFile;
+import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
+
 import com.fongmi.android.tv.server.Nano;
 import com.fongmi.android.tv.server.impl.Process;
 import com.fongmi.android.tv.utils.FileUtil;
@@ -16,15 +20,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.zip.CRC32;
 
-import fi.iki.elonen.NanoHTTPD;
+import fi.iki.elonen.NanoHTTPD.IHTTPSession;
+import fi.iki.elonen.NanoHTTPD.Response;
+import fi.iki.elonen.NanoHTTPD.Response.Status;
 
 public class Local implements Process {
 
-    private final SimpleDateFormat format;
-
-    public Local() {
-        this.format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault());
+    @Override
+    public boolean isRequest(IHTTPSession session, String url) {
+        return url.startsWith("/file") || url.startsWith("/upload") || url.startsWith("/newFolder") || url.startsWith("/delFolder") || url.startsWith("/delFile");
     }
 
     @Override
@@ -52,7 +58,7 @@ public class Local implements Process {
         }
     }
 
-    private NanoHTTPD.Response upload(Map<String, String> params, Map<String, String> files) {
+    private Response upload(Map<String, String> params, Map<String, String> files) {
         String path = params.get("path");
         for (String k : files.keySet()) {
             String fn = params.get(k);
@@ -63,14 +69,14 @@ public class Local implements Process {
         return Nano.ok();
     }
 
-    private NanoHTTPD.Response newFolder(Map<String, String> params) {
+    private Response newFolder(Map<String, String> params) {
         String path = params.get("path");
         String name = params.get("name");
         Path.root(path, name).mkdirs();
         return Nano.ok();
     }
 
-    private NanoHTTPD.Response delFolder(Map<String, String> params) {
+    private Response delete(Map<String, String> params) {
         String path = params.get("path");
         Path.clear(Path.root(path));
         return Nano.ok();
@@ -85,12 +91,11 @@ public class Local implements Process {
             return Nano.ok(info.toString());
         }
         JsonArray files = new JsonArray();
-        info.add("files", files);
-        for (File file : list) {
+        for (File file : Path.list(dir)) {
             JsonObject obj = new JsonObject();
             obj.addProperty("name", file.getName());
-            obj.addProperty("path", file.getAbsolutePath().replace(Path.rootPath(), ""));
-            obj.addProperty("time", format.format(new Date(file.lastModified())));
+            obj.addProperty("path", relativeTo(file, rootPath));
+            obj.addProperty("time", Formatters.LOCAL_DATETIME.format(Instant.ofEpochMilli(file.lastModified()).atZone(ZoneId.systemDefault())));
             obj.addProperty("dir", file.isDirectory() ? 1 : 0);
             files.add(obj);
         }

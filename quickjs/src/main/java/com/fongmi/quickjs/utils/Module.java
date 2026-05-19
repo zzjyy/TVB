@@ -12,18 +12,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Module {
 
-    private final ConcurrentHashMap<String, String> cache;
+    private static final int MAX_SIZE = 50;
+    private final LruCache<String, String> cache;
 
-    private static class Loader {
-        static volatile Module INSTANCE = new Module();
+    public Module() {
+        cache = new LruCache<>(MAX_SIZE);
     }
 
     public static Module get() {
         return Loader.INSTANCE;
-    }
-
-    public Module() {
-        this.cache = new ConcurrentHashMap<>();
     }
 
     public String fetch(String name) {

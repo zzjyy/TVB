@@ -76,19 +76,11 @@
 # Sardine
 -keep class com.thegrizzlylabs.sardineandroid.** { *; }
 
-# Smbj
--keep class com.hierynomus.** { *; }
--keep class net.engio.mbassy.** { *; }
-
 # TVBus
 -keep class com.tvbus.engine.** { *; }
 
 # XunLei
 -keep class com.xunlei.downloadlib.** { *; }
-
-# ZLive
--keep class com.sun.jna.** { *; }
--keep class com.east.android.zlive.** { *; }
 
 # Zxing
 -keep class com.google.zxing.** { *; }

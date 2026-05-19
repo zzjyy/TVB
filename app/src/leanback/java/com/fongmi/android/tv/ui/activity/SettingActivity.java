@@ -1,15 +1,14 @@
 package com.fongmi.android.tv.ui.activity;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Bundle;
 import android.view.View;
 
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.BuildConfig;
 import com.fongmi.android.tv.R;
-import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.Updater;
 import com.fongmi.android.tv.api.config.LiveConfig;
 import com.fongmi.android.tv.api.config.VodConfig;
@@ -38,6 +37,7 @@ import com.fongmi.android.tv.ui.dialog.SiteDialog;
 import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.FileUtil;
 import com.fongmi.android.tv.utils.Notify;
+import com.fongmi.android.tv.utils.PermissionUtil;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.bean.Doh;
@@ -55,7 +55,6 @@ public class SettingActivity extends BaseActivity implements ConfigCallback, Sit
     private ActivitySettingBinding mBinding;
     private String[] quality;
     private String[] size;
-    private int type;
 
     public static void start(Activity activity) {
         activity.startActivity(new Intent(activity, SettingActivity.class));
@@ -115,9 +114,10 @@ public class SettingActivity extends BaseActivity implements ConfigCallback, Sit
     @Override
     protected void initEvent() {
         mBinding.vod.setOnClickListener(this::onVod);
+        mBinding.doh.setOnClickListener(this::setDoh);
         mBinding.live.setOnClickListener(this::onLive);
         mBinding.wall.setOnClickListener(this::onWall);
-        mBinding.proxy.setOnClickListener(this::onProxy);
+        mBinding.size.setOnClickListener(this::setSize);
         mBinding.cache.setOnClickListener(this::onCache);
         mBinding.backup.setOnClickListener(this::onBackup);
         mBinding.player.setOnClickListener(this::onPlayer);
@@ -129,7 +129,6 @@ public class SettingActivity extends BaseActivity implements ConfigCallback, Sit
         mBinding.liveHome.setOnClickListener(this::onLiveHome);
         mBinding.wall.setOnLongClickListener(this::onWallEdit);
         mBinding.vodHistory.setOnClickListener(this::onVodHistory);
-        mBinding.version.setOnLongClickListener(this::onVersionDev);
         mBinding.liveHistory.setOnClickListener(this::onLiveHistory);
         mBinding.wallDefault.setOnClickListener(this::setWallDefault);
         mBinding.wallRefresh.setOnClickListener(this::setWallRefresh);
@@ -182,6 +181,7 @@ public class SettingActivity extends BaseActivity implements ConfigCallback, Sit
 
             @Override
             public void error(String msg) {
+                Notify.dismiss();
                 Notify.show(msg);
                 setConfig(type);
             }
@@ -229,15 +229,30 @@ public class SettingActivity extends BaseActivity implements ConfigCallback, Sit
     }
 
     private void onVod(View view) {
-        ConfigDialog.create(this).type(type = 0).show();
+        ConfigDialog.create().vod().show(this);
     }
 
     private void onLive(View view) {
-        ConfigDialog.create(this).type(type = 1).show();
+        ConfigDialog.create().live().show(this);
     }
 
     private void onWall(View view) {
-        ConfigDialog.create(this).type(type = 2).show();
+        ConfigDialog.create().wall().show(this);
+    }
+
+    private boolean onVodEdit(View view) {
+        ConfigDialog.create().vod().edit().show(this);
+        return true;
+    }
+
+    private boolean onLiveEdit(View view) {
+        ConfigDialog.create().live().edit().show(this);
+        return true;
+    }
+
+    private boolean onWallEdit(View view) {
+        ConfigDialog.create().wall().edit().show(this);
+        return true;
     }
 
     private boolean onVodEdit(View view) {
@@ -256,7 +271,7 @@ public class SettingActivity extends BaseActivity implements ConfigCallback, Sit
     }
 
     private void onVodHome(View view) {
-        SiteDialog.create(this).action().show();
+        SiteDialog.create().action().show(this);
     }
 
     private void onLiveHome(View view) {
@@ -264,11 +279,11 @@ public class SettingActivity extends BaseActivity implements ConfigCallback, Sit
     }
 
     private void onVodHistory(View view) {
-        HistoryDialog.create(this).type(type = 0).show();
+        HistoryDialog.create().vod().show(this);
     }
 
     private void onLiveHistory(View view) {
-        HistoryDialog.create(this).type(type = 1).show();
+        HistoryDialog.create().live().show(this);
     }
 
     private void onPlayer(View view) {
@@ -285,18 +300,14 @@ public class SettingActivity extends BaseActivity implements ConfigCallback, Sit
     }
 
     private void setWallDefault(View view) {
-        WallConfig.refresh(Setting.getWall() == 4 ? 1 : Setting.getWall() + 1);
+        Setting.putWall(Setting.getWall() == 4 ? 1 : Setting.getWall() + 1);
+        Setting.putWallType(0);
+        ConfigEvent.wall();
     }
 
     private void setWallRefresh(View view) {
-        Notify.progress(this);
-        WallConfig.get().load(new Callback() {
-            @Override
-            public void success() {
-                Notify.dismiss();
-                setCacheText();
-            }
-        });
+        Setting.putWall(0);
+        WallConfig.get().load(getCallback());
     }
 
     private void setIncognito(View view) {
@@ -312,14 +323,14 @@ public class SettingActivity extends BaseActivity implements ConfigCallback, Sit
     }
 
     private void setSize(View view) {
-        int index = Setting.getSize();
-        Setting.putSize(index = index == size.length - 1 ? 0 : ++index);
+        int index = (PlayerSetting.getSize() + 1) % size.length;
         mBinding.sizeText.setText(size[index]);
+        PlayerSetting.putSize(index);
         RefreshEvent.size();
     }
 
     private void setDoh(View view) {
-        DohDialog.create(this).index(getDohIndex()).show();
+        DohDialog.create().index(getDohIndex()).show(this);
     }
 
     @Override

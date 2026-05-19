@@ -7,12 +7,11 @@ import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.AppCompatTextView;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.utils.KeyUtil;
 
-public class CustomTypeView extends AppCompatTextView {
+public class CustomTypeView extends MaterialTextView {
 
     private Listener listener;
     private boolean coolDown;
@@ -35,7 +34,7 @@ public class CustomTypeView extends AppCompatTextView {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (hasEvent(event)) return onKeyDown();
+        if (listener != null && hasEvent(event)) return onKeyDown();
         else return super.dispatchKeyEvent(event);
     }
 

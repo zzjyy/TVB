@@ -4,17 +4,25 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
 
+import androidx.annotation.Nullable;
+
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.gson.HeaderAdapter;
+import com.fongmi.android.tv.utils.Formatters;
 import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.ResUtil;
-import com.github.catvod.utils.Json;
+import com.github.catvod.utils.Trans;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.JsonElement;
+import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -107,6 +115,11 @@ public class Channel {
         this.number = number;
     }
 
+    public Channel setNumber(int number) {
+        setNumber(String.format(Locale.getDefault(), "%03d", number));
+        return this;
+    }
+
     public String getLogo() {
         return TextUtils.isEmpty(logo) ? "" : logo;
     }
@@ -129,6 +142,14 @@ public class Channel {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getShow() {
+        return TextUtils.isEmpty(show) ? getName() : show;
+    }
+
+    public void setShow(String show) {
+        this.show = show;
     }
 
     public String getUa() {
@@ -199,7 +220,31 @@ public class Channel {
         return header;
     }
 
-    public void setHeader(JsonElement header) {
+    public void setTvgId(String tvgId) {
+        this.tvgId = tvgId;
+    }
+
+    public String getTvgName() {
+        return TextUtils.isEmpty(tvgName) ? getName() : tvgName;
+    }
+
+    public void setTvgName(String tvgName) {
+        this.tvgName = tvgName;
+    }
+
+    public Catchup getCatchup() {
+        return catchup == null ? new Catchup() : catchup;
+    }
+
+    public void setCatchup(Catchup catchup) {
+        this.catchup = catchup;
+    }
+
+    public Map<String, String> getHeader() {
+        return header == null ? new HashMap<>() : header;
+    }
+
+    public void setHeader(Map<String, String> header) {
         this.header = header;
     }
 
@@ -248,19 +293,45 @@ public class Channel {
     }
 
     public Epg getData() {
-        return data == null ? new Epg() : data;
+        return getData(ZoneId.systemDefault());
     }
 
     public void setData(Epg data) {
-        this.data = data;
+        if (dataList == null) dataList = new ArrayList<>();
+        dataList.removeIf(e -> e.equal(data.getDate()));
+        dataList.add(data);
     }
 
-    public int getLine() {
-        return line;
+    public Epg getData(ZoneId zoneId) {
+        String today = LocalDate.now(zoneId).format(Formatters.DATE);
+        if (dataList == null) return new Epg();
+        return dataList.stream().filter(e -> e.equal(today)).findFirst().orElse(new Epg());
     }
 
-    public void setLine(int line) {
-        this.line = Math.max(line, 0);
+    public List<Epg> getDataList() {
+        return dataList == null ? Collections.emptyList() : dataList;
+    }
+
+    public void setDataList(List<Epg> list) {
+        this.dataList = new ArrayList<>(list);
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = Math.max(index, 0);
+    }
+
+    public void setIndex(String line) {
+        for (int i = 0; i < getUrls().size(); i++) {
+            String url = getUrls().get(i);
+            if (url.equals(line) || (url.contains("$") && line.equals(url.split("\\$")[0]))) {
+                setIndex(i);
+                break;
+            }
+        }
     }
 
     public boolean isSelected() {
@@ -280,19 +351,15 @@ public class Channel {
     }
 
     public void loadLogo(ImageView view) {
-        ImgUtil.loadLive(getLogo(), view);
+        ImgUtil.load(getName(), getLogo(), view, false);
     }
 
-    public void addUrls(String... urls) {
-        getUrls().addAll(new ArrayList<>(Arrays.asList(urls)));
-    }
-
-    public void nextLine() {
-        setLine(getLine() < getUrls().size() - 1 ? getLine() + 1 : 0);
-    }
-
-    public void prevLine() {
-        setLine(getLine() > 0 ? getLine() - 1 : getUrls().size() - 1);
+    public void switchLine(boolean next) {
+        List<?> urls = getUrls();
+        if (urls.isEmpty()) return;
+        int size = urls.size();
+        int step = next ? 1 : -1;
+        setIndex((getIndex() + step + size) % size);
     }
 
     public String getCurrent() {
@@ -304,7 +371,7 @@ public class Channel {
     }
 
     public boolean isLast() {
-        return getUrls().isEmpty() || getLine() == getUrls().size() - 1;
+        return getUrls().isEmpty() || getIndex() == getUrls().size() - 1;
     }
 
     public boolean hasCatchup() {
@@ -346,7 +413,7 @@ public class Channel {
     }
 
     public Map<String, String> getHeaders() {
-        Map<String, String> headers = Json.toMap(getHeader());
+        Map<String, String> headers = new HashMap<>(getHeader());
         if (!getUa().isEmpty()) headers.put(HttpHeaders.USER_AGENT, getUa());
         if (!getOrigin().isEmpty()) headers.put(HttpHeaders.ORIGIN, getOrigin());
         if (!getReferer().isEmpty()) headers.put(HttpHeaders.REFERER, getReferer());
@@ -366,6 +433,7 @@ public class Channel {
         setTvgId(item.getTvgId());
         setLogo(item.getLogo());
         setName(item.getName());
+        setShow(item.getShow());
         setUrls(item.getUrls());
         setData(item.getData());
         setDrm(item.getDrm());
@@ -383,7 +451,7 @@ public class Channel {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
         if (!(obj instanceof Channel)) return false;
         Channel it = (Channel) obj;

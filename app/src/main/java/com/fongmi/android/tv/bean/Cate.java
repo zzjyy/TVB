@@ -8,7 +8,11 @@ import com.google.gson.annotations.SerializedName;
 public class Cate implements Parcelable {
 
     @SerializedName("land")
-    private int land;
+    private Integer land;
+    @SerializedName("circle")
+    private Integer circle;
+    @SerializedName("ratio")
+    private Float ratio;
 
     @SerializedName("circle")
     private int circle;
@@ -20,7 +24,7 @@ public class Cate implements Parcelable {
     }
 
     public int getLand() {
-        return land;
+        return land == null ? 0 : land;
     }
 
     public int getCircle() {

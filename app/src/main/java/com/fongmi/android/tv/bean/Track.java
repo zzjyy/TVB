@@ -22,12 +22,22 @@ public class Track {
     private int track;
     private String key;
     private String name;
+    private String format;
     private boolean selected;
-    private boolean adaptive;
 
-    public Track(int type, String name) {
+    public Track(int type, String name, String format) {
         this.type = type;
         this.name = name;
+        this.format = format;
+    }
+
+    public static List<Track> find(String key) {
+        return TextUtils.isEmpty(key) ? Collections.emptyList() : AppDatabase.get().getTrackDao().find(key);
+    }
+
+    public static void delete(String key) {
+        if (TextUtils.isEmpty(key)) return;
+        AppDatabase.get().getTrackDao().delete(key);
     }
 
     public int getId() {
@@ -66,7 +76,7 @@ public class Track {
         return key;
     }
 
-    public void setKey(@NonNull String key) {
+    public void setKey(String key) {
         this.key = key;
     }
 
@@ -76,6 +86,14 @@ public class Track {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
     }
 
     public boolean isSelected() {

@@ -8,12 +8,13 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.Player;
 import androidx.media3.common.util.Util;
 import androidx.media3.ui.DefaultTimeBar;
 import androidx.media3.ui.TimeBar;
 
 import com.fongmi.android.tv.R;
-import com.fongmi.android.tv.player.Players;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +34,8 @@ public class CustomSeekView extends FrameLayout implements TimeBar.OnScrubListen
     private long currentPosition;
     private long currentBuffered;
     private boolean scrubbing;
+    private boolean attached;
+    private Player player;
 
     public CustomSeekView(Context context) {
         this(context, null);
@@ -116,7 +119,30 @@ public class CustomSeekView extends FrameLayout implements TimeBar.OnScrubListen
         }
     }
 
+    private void resetView() {
+        positionView.setText("00:00");
+        durationView.setText("00:00");
+        timeBar.setPosition(currentPosition = 0);
+        timeBar.setDuration(currentDuration = 0);
+        timeBar.setBufferedPosition(currentBuffered = 0);
+    }
+
+    private void setKeyTimeIncrement(long duration) {
+        if (duration > TimeUnit.HOURS.toMillis(3)) {
+            timeBar.setKeyTimeIncrement(TimeUnit.MINUTES.toMillis(5));
+        } else if (duration > TimeUnit.MINUTES.toMillis(30)) {
+            timeBar.setKeyTimeIncrement(TimeUnit.MINUTES.toMillis(1));
+        } else if (duration > TimeUnit.MINUTES.toMillis(15)) {
+            timeBar.setKeyTimeIncrement(TimeUnit.SECONDS.toMillis(30));
+        } else if (duration > TimeUnit.MINUTES.toMillis(10)) {
+            timeBar.setKeyTimeIncrement(TimeUnit.SECONDS.toMillis(15));
+        } else if (duration > 0) {
+            timeBar.setKeyTimeIncrement(TimeUnit.SECONDS.toMillis(10));
+        }
+    }
+
     private long delayMs(long position) {
+        float speed = player.getPlaybackParameters().speed;
         long mediaTimeUntilNextFullSecondMs = 1000 - position % 1000;
         long mediaTimeDelayMs = Math.min(timeBar.getPreferredUpdateDelay(), mediaTimeUntilNextFullSecondMs);
         long delayMs = (long) (mediaTimeDelayMs / player.getSpeed());

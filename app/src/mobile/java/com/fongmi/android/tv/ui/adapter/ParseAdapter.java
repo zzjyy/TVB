@@ -17,7 +17,7 @@ import java.util.List;
 
 public class ParseAdapter extends RecyclerView.Adapter<ParseAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<Parse> mItems;
     private final int viewType;
 
@@ -33,7 +33,7 @@ public class ParseAdapter extends RecyclerView.Adapter<ParseAdapter.ViewHolder> 
     }
 
     public int getPosition() {
-        for (int i = 0; i < mItems.size(); i++) if (mItems.get(i).isActivated()) return i;
+        for (int i = 0; i < mItems.size(); i++) if (mItems.get(i).isSelected()) return i;
         return 0;
     }
 
@@ -73,7 +73,7 @@ public class ParseAdapter extends RecyclerView.Adapter<ParseAdapter.ViewHolder> 
         if (holder.lightBinding != null) holder.initView(holder.lightBinding.text, item);
     }
 
-    class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private AdapterParseDarkBinding darkBinding;
         private AdapterParseLightBinding lightBinding;
@@ -90,8 +90,8 @@ public class ParseAdapter extends RecyclerView.Adapter<ParseAdapter.ViewHolder> 
 
         void initView(TextView view, Parse item) {
             view.setText(item.getName());
-            view.setActivated(item.isActivated());
-            view.setOnClickListener(v -> mListener.onItemClick(item));
+            view.setSelected(item.isSelected());
+            view.setOnClickListener(v -> listener.onItemClick(item));
         }
     }
 }

@@ -14,14 +14,12 @@ import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.History;
 import com.fongmi.android.tv.databinding.DialogReceiveBinding;
 import com.fongmi.android.tv.event.CastEvent;
-import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.impl.Callback;
 import com.fongmi.android.tv.ui.activity.VideoActivity;
 import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.Notify;
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
-public class ReceiveDialog extends BaseDialog {
+public class ReceiveDialog extends BaseBottomSheetDialog {
 
     private DialogReceiveBinding binding;
     private CastEvent event;
@@ -41,7 +39,7 @@ public class ReceiveDialog extends BaseDialog {
     }
 
     public void show(Fragment fragment) {
-        for (Fragment f : fragment.getChildFragmentManager().getFragments()) if (f instanceof BottomSheetDialogFragment) return;
+        for (Fragment f : fragment.getChildFragmentManager().getFragments()) if (f instanceof ReceiveDialog) return;
         show(fragment.getChildFragmentManager(), null);
     }
 
@@ -52,7 +50,7 @@ public class ReceiveDialog extends BaseDialog {
 
     @Override
     protected void initView() {
-        History item = event.getHistory();
+        History item = event.history();
         binding.name.setText(item.getVodName());
         binding.from.setText(event.getDevice().getName());
         ImgUtil.loadVod(item.getVodName(), item.getVodPic(), binding.image);
@@ -89,8 +87,6 @@ public class ReceiveDialog extends BaseDialog {
         return new Callback() {
             @Override
             public void success() {
-                RefreshEvent.config();
-                RefreshEvent.video();
                 onReceiveCast();
                 hideProgress();
             }

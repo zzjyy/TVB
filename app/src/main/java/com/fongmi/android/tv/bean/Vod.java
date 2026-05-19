@@ -2,11 +2,17 @@ package com.fongmi.android.tv.bean;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.Html;
 import android.text.TextUtils;
 import android.view.View;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.impl.Diffable;
 import com.fongmi.android.tv.utils.Sniffer;
+import com.fongmi.android.tv.utils.Util;
 import com.github.catvod.utils.Trans;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -20,53 +26,44 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.IntStream;
 
 @Root(strict = false)
-public class Vod implements Parcelable {
+public class Vod implements Parcelable, Diffable<Vod> {
 
     @Element(name = "id", required = false)
     @SerializedName("vod_id")
     private String vodId;
-
     @Element(name = "name", required = false)
     @SerializedName("vod_name")
     private String vodName;
-
     @Element(name = "type", required = false)
     @SerializedName("type_name")
     private String typeName;
-
     @Element(name = "pic", required = false)
     @SerializedName("vod_pic")
     private String vodPic;
-
     @Element(name = "note", required = false)
     @SerializedName("vod_remarks")
     private String vodRemarks;
-
     @Element(name = "year", required = false)
     @SerializedName("vod_year")
     private String vodYear;
-
     @Element(name = "area", required = false)
     @SerializedName("vod_area")
     private String vodArea;
-
     @Element(name = "director", required = false)
     @SerializedName("vod_director")
     private String vodDirector;
-
     @Element(name = "actor", required = false)
     @SerializedName("vod_actor")
     private String vodActor;
-
     @Element(name = "des", required = false)
     @SerializedName("vod_content")
     private String vodContent;
-
     @SerializedName("vod_play_from")
     private String vodPlayFrom;
-
     @SerializedName("vod_play_url")
     private String vodPlayUrl;
 
@@ -81,7 +78,6 @@ public class Vod implements Parcelable {
 
     @SerializedName("cate")
     private Cate cate;
-
     @SerializedName("style")
     private Style style;
 
@@ -97,8 +93,39 @@ public class Vod implements Parcelable {
     @Path("dl")
     @ElementList(entry = "dd", required = false, inline = true)
     private List<Flag> vodFlags;
-
     private Site site;
+
+    public Vod() {
+    }
+
+    protected Vod(Parcel in) {
+        this.vodId = in.readString();
+        this.vodName = in.readString();
+        this.typeName = in.readString();
+        this.vodPic = in.readString();
+        this.vodRemarks = in.readString();
+        this.vodYear = in.readString();
+        this.vodArea = in.readString();
+        this.vodDirector = in.readString();
+        this.vodActor = in.readString();
+        this.vodContent = in.readString();
+        this.vodPlayFrom = in.readString();
+        this.vodPlayUrl = in.readString();
+        this.vodTag = in.readString();
+        this.action = in.readString();
+        this.land = (Integer) in.readValue(Integer.class.getClassLoader());
+        this.circle = (Integer) in.readValue(Integer.class.getClassLoader());
+        this.ratio = (Float) in.readValue(Float.class.getClassLoader());
+        this.cate = in.readParcelable(Cate.class.getClassLoader());
+        this.style = in.readParcelable(Style.class.getClassLoader());
+        this.vodFlags = in.createTypedArrayList(Flag.CREATOR);
+        this.site = in.readParcelable(Site.class.getClassLoader());
+    }
+
+    public static Vod objectFrom(String str) {
+        Vod vod = App.gson().fromJson(str, Vod.class);
+        return vod == null ? new Vod() : vod.trans().setFlags();
+    }
 
     public static List<Vod> arrayFrom(String str) {
         Type listType = new TypeToken<List<Vod>>() {}.getType();
@@ -106,22 +133,19 @@ public class Vod implements Parcelable {
         return items == null ? Collections.emptyList() : items;
     }
 
-    public Vod() {
-    }
-
-    public String getVodId() {
+    public String getId() {
         return TextUtils.isEmpty(vodId) ? "" : vodId.trim();
     }
 
-    public void setVodId(String vodId) {
+    public void setId(String vodId) {
         this.vodId = vodId;
     }
 
-    public String getVodName() {
-        return TextUtils.isEmpty(vodName) ? "" : vodName.trim();
+    public String getName() {
+        return TextUtils.isEmpty(vodName) ? "" : Html.fromHtml(vodName, Html.FROM_HTML_MODE_LEGACY).toString().trim();
     }
 
-    public void setVodName(String vodName) {
+    public void setName(String vodName) {
         this.vodName = vodName;
     }
 
@@ -129,43 +153,55 @@ public class Vod implements Parcelable {
         return TextUtils.isEmpty(typeName) ? "" : typeName.trim();
     }
 
-    public String getVodPic() {
+    public String getPic() {
         return TextUtils.isEmpty(vodPic) ? "" : vodPic.trim();
     }
 
-    public void setVodPic(String vodPic) {
+    public void setPic(String vodPic) {
         this.vodPic = vodPic;
     }
 
-    public String getVodRemarks() {
+    public String getRemarks() {
         return TextUtils.isEmpty(vodRemarks) ? "" : vodRemarks.trim();
     }
 
-    public String getVodYear() {
+    public String getYear() {
         return TextUtils.isEmpty(vodYear) ? "" : vodYear.trim();
     }
 
-    public String getVodArea() {
+    public String getArea() {
         return TextUtils.isEmpty(vodArea) ? "" : vodArea.trim();
     }
 
-    public String getVodDirector() {
+    public String getDirector() {
         return TextUtils.isEmpty(vodDirector) ? "" : vodDirector.trim();
     }
 
-    public String getVodActor() {
+    public void setDirector(String vodDirector) {
+        this.vodDirector = vodDirector;
+    }
+
+    public String getActor() {
         return TextUtils.isEmpty(vodActor) ? "" : vodActor.trim();
     }
 
-    public String getVodContent() {
-        return TextUtils.isEmpty(vodContent) ? "" : vodContent.trim().replace("\n", "<br>");
+    public String getContent() {
+        return TextUtils.isEmpty(vodContent) ? "" : Util.clean(vodContent);
     }
 
-    public String getVodPlayFrom() {
+    public void setContent(String vodContent) {
+        this.vodContent = vodContent;
+    }
+
+    public String getPlayFrom() {
         return TextUtils.isEmpty(vodPlayFrom) ? "" : vodPlayFrom;
     }
 
-    public String getVodPlayUrl() {
+    public void setPlayFrom(String vodPlayFrom) {
+        this.vodPlayFrom = vodPlayFrom;
+    }
+
+    public String getPlayUrl() {
         return TextUtils.isEmpty(vodPlayUrl) ? "" : vodPlayUrl;
     }
 
@@ -201,11 +237,23 @@ public class Vod implements Parcelable {
         return ratio;
     }
 
-    public List<Flag> getVodFlags() {
+    public int getLand() {
+        return land == null ? 0 : land;
+    }
+
+    public int getCircle() {
+        return circle == null ? 0 : circle;
+    }
+
+    public float getRatio() {
+        return ratio == null ? 0 : ratio;
+    }
+
+    public List<Flag> getFlags() {
         return vodFlags = vodFlags == null ? new ArrayList<>() : vodFlags;
     }
 
-    public void setVodFlags(List<Flag> vodFlags) {
+    public void setFlags(List<Flag> vodFlags) {
         this.vodFlags = vodFlags;
     }
 
@@ -230,15 +278,15 @@ public class Vod implements Parcelable {
     }
 
     public int getYearVisible() {
-        return getSite() != null || getVodYear().length() < 4 ? View.GONE : View.VISIBLE;
+        return getSite() != null || getYear().length() < 4 ? View.GONE : View.VISIBLE;
     }
 
     public int getNameVisible() {
-        return getVodName().isEmpty() ? View.GONE : View.VISIBLE;
+        return getName().isEmpty() ? View.GONE : View.VISIBLE;
     }
 
     public int getRemarkVisible() {
-        return getVodRemarks().isEmpty() ? View.GONE : View.VISIBLE;
+        return getRemarks().isEmpty() ? View.GONE : View.VISIBLE;
     }
 
     public boolean isFolder() {
@@ -253,48 +301,42 @@ public class Vod implements Parcelable {
         return getStyle() != null ? getStyle() : style != null ? style : Style.rect();
     }
 
-    public String getVodPic(String pic) {
-        if (getVodPic().isEmpty()) setVodPic(pic);
-        return getVodPic();
+    public Vod setFlags() {
+        String[] playUrls = getPlayUrl().split("\\$\\$\\$");
+        String[] playFlags = getPlayFrom().split("\\$\\$\\$");
+        if (!getFlags().isEmpty()) for (Flag item : getFlags()) item.setEpisodes(item.getUrls());
+        else IntStream.range(0, playFlags.length).filter(i -> !playFlags[i].trim().isEmpty() && i < playUrls.length && !TextUtils.isEmpty(playUrls[i])).mapToObj(i -> Flag.create(playFlags[i].trim(), playUrls[i])).forEach(getFlags()::add);
+        return this;
     }
 
-    public String getVodName(String name) {
-        if (getVodName().isEmpty()) setVodName(name);
-        return getVodName();
-    }
-
-    public void trans() {
-        if (Trans.pass()) return;
+    public Vod trans() {
+        if (Trans.pass()) return this;
         this.vodName = Trans.s2t(vodName);
         this.vodArea = Trans.s2t(vodArea);
         this.typeName = Trans.s2t(typeName);
-        this.vodRemarks = Trans.s2t(vodRemarks);
         if (vodActor != null) this.vodActor = Sniffer.CLICKER.matcher(vodActor).find() ? vodActor : Trans.s2t(vodActor);
+        if (vodRemarks != null) this.vodRemarks = Sniffer.CLICKER.matcher(vodRemarks).find() ? vodRemarks : Trans.s2t(vodRemarks);
         if (vodContent != null) this.vodContent = Sniffer.CLICKER.matcher(vodContent).find() ? vodContent : Trans.s2t(vodContent);
         if (vodDirector != null) this.vodDirector = Sniffer.CLICKER.matcher(vodDirector).find() ? vodDirector : Trans.s2t(vodDirector);
+        return this;
     }
 
-    public void setVodFlags() {
-        String[] playFlags = getVodPlayFrom().split("\\$\\$\\$");
-        String[] playUrls = getVodPlayUrl().split("\\$\\$\\$");
-        for (int i = 0; i < playFlags.length; i++) {
-            if (playFlags[i].isEmpty() || i >= playUrls.length) continue;
-            Flag item = Flag.create(playFlags[i].trim());
-            item.createEpisode(playUrls[i]);
-            getVodFlags().add(item);
-        }
-        for (Flag item : getVodFlags()) {
-            if (item.getUrls() == null) continue;
-            item.createEpisode(item.getUrls());
-        }
+    @NonNull
+    @Override
+    public String toString() {
+        return App.gson().toJson(this);
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Vod)) return false;
-        Vod it = (Vod) obj;
-        return getVodId().equals(it.getVodId());
+        if (!(obj instanceof Vod it)) return false;
+        return !getId().isEmpty() && !it.getId().isEmpty() ? Objects.equals(getId(), it.getId()) : Objects.equals(getName(), it.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return !getId().isEmpty() ? Objects.hash(getId()) : Objects.hash(getName());
     }
 
     @Override

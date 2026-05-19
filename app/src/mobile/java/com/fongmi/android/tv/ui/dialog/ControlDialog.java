@@ -17,7 +17,7 @@ import com.fongmi.android.tv.bean.History;
 import com.fongmi.android.tv.bean.Parse;
 import com.fongmi.android.tv.databinding.ActivityVideoBinding;
 import com.fongmi.android.tv.databinding.DialogControlBinding;
-import com.fongmi.android.tv.player.Players;
+import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.ui.adapter.ParseAdapter;
 import com.fongmi.android.tv.ui.base.ViewType;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
@@ -29,8 +29,9 @@ import com.google.android.material.slider.Slider;
 import java.util.Arrays;
 import java.util.List;
 
-public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickListener {
+public class ControlDialog extends BaseBottomSheetDialog implements ParseAdapter.OnClickListener {
 
+    private final String[] scale;
     private DialogControlBinding binding;
     private ActivityVideoBinding parent;
     private FragmentActivity activity;
@@ -41,12 +42,12 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
     private Players player;
     private boolean parse;
 
-    public static ControlDialog create() {
-        return new ControlDialog();
-    }
-
     public ControlDialog() {
         this.scale = ResUtil.getStringArray(R.array.select_scale);
+    }
+
+    public static ControlDialog create() {
+        return new ControlDialog();
     }
 
     public ControlDialog parent(ActivityVideoBinding parent) {
@@ -69,8 +70,13 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
         return this;
     }
 
+    public ControlDialog player(PlayerManager player) {
+        this.player = player;
+        return this;
+    }
+
     public ControlDialog show(FragmentActivity activity) {
-        for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof BottomSheetDialogFragment) return this;
+        for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof ControlDialog) return this;
         show(activity.getSupportFragmentManager(), null);
         this.listener = (Listener) activity;
         this.activity = activity;
@@ -94,6 +100,7 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
         binding.loop.setActivated(parent.control.action.loop.isActivated());
         binding.timer.setActivated(Timer.get().isRunning());
         setTrackVisible();
+        setTitleVisible();
         setScaleText();
         setPlayer();
         setParse();
@@ -131,7 +138,7 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
     private void setScaleText() {
         for (int i = 0; i < scales.size(); i++) {
             scales.get(i).setText(scale[i]);
-            scales.get(i).setActivated(scales.get(i).getText().equals(parent.control.action.scale.getText()));
+            scales.get(i).setSelected(scales.get(i).getText().equals(parent.control.action.scale.getText()));
         }
     }
 
@@ -144,14 +151,14 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
     }
 
     private void setScale(View view) {
-        for (TextView textView : scales) textView.setActivated(false);
-        listener.onScale(Integer.parseInt(view.getTag().toString()));
-        view.setActivated(true);
+        for (TextView textView : scales) textView.setSelected(false);
+        ((Listener) requireActivity()).onScale(Integer.parseInt(view.getTag().toString()));
+        view.setSelected(true);
     }
 
     private void active(View view, TextView target) {
         target.performClick();
-        view.setActivated(target.isActivated());
+        view.setSelected(target.isSelected());
     }
 
     private void click(TextView view, TextView target) {
@@ -193,9 +200,13 @@ public class ControlDialog extends BaseDialog implements ParseAdapter.OnClickLis
         binding.track.setVisibility(binding.text.getVisibility() == View.GONE && binding.audio.getVisibility() == View.GONE && binding.video.getVisibility() == View.GONE ? View.GONE : View.VISIBLE);
     }
 
+    public void setTitleVisible() {
+        binding.title.setVisibility(parent.control.action.title.getVisibility());
+    }
+
     @Override
     public void onItemClick(Parse item) {
-        listener.onParse(item);
+        ((Listener) requireActivity()).onParse(item);
         binding.parse.getAdapter().notifyItemRangeChanged(0, binding.parse.getAdapter().getItemCount());
     }
 

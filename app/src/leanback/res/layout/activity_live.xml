@@ -23,21 +23,7 @@
 
     </FrameLayout>
 
-    <include
-        android:id="@+id/widget"
-        layout="@layout/view_widget_live"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <include
-        android:id="@+id/control"
-        layout="@layout/view_control_live"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:visibility="gone" />
-
-    <LinearLayout
+    <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/recycler"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
@@ -50,6 +36,9 @@
             android:id="@+id/group"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:padding="12dp"
             tools:itemCount="5"
             tools:listitem="@layout/adapter_group" />
 
@@ -57,6 +46,10 @@
             android:id="@+id/channel"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:translationX="-12dp"
+            android:clipToPadding="false"
+            android:padding="12dp"
             tools:itemCount="5"
             tools:listitem="@layout/adapter_channel" />
 

@@ -1,5 +1,7 @@
 package com.fongmi.android.tv.event;
 
+import com.fongmi.android.tv.bean.Vod;
+
 import org.greenrobot.eventbus.EventBus;
 
 public class RefreshEvent {
@@ -7,16 +9,8 @@ public class RefreshEvent {
     private final Type type;
     private String path;
 
-    public static void config() {
-        EventBus.getDefault().post(new RefreshEvent(Type.CONFIG));
-    }
-
-    public static void image() {
-        EventBus.getDefault().post(new RefreshEvent(Type.IMAGE));
-    }
-
-    public static void video() {
-        EventBus.getDefault().post(new RefreshEvent(Type.VIDEO));
+    public static void category() {
+        EventBus.getDefault().post(new RefreshEvent(Type.CATEGORY));
     }
 
     public static void history() {
@@ -31,8 +25,32 @@ public class RefreshEvent {
         EventBus.getDefault().post(new RefreshEvent(Type.SIZE));
     }
 
-    public static void wall() {
-        EventBus.getDefault().post(new RefreshEvent(Type.WALL));
+    public static void theme() {
+        EventBus.getDefault().post(new RefreshEvent(Type.THEME));
+    }
+
+    public static void live() {
+        EventBus.getDefault().post(new RefreshEvent(Type.LIVE));
+    }
+
+    public static void detail() {
+        EventBus.getDefault().post(new RefreshEvent(Type.DETAIL));
+    }
+
+    public static void player() {
+        EventBus.getDefault().post(new RefreshEvent(Type.PLAYER));
+    }
+
+    public static void subtitle(String path) {
+        EventBus.getDefault().post(new RefreshEvent(Type.SUBTITLE, path));
+    }
+
+    public static void danmaku(String path) {
+        EventBus.getDefault().post(new RefreshEvent(Type.DANMAKU, path));
+    }
+
+    public static void vod(Vod vod) {
+        EventBus.getDefault().post(new RefreshEvent(Type.VOD, vod));
     }
 
     public static void live() {

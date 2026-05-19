@@ -19,11 +19,10 @@ import com.google.common.net.HttpHeaders;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
-import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -120,11 +119,14 @@ public class Live {
         return App.gson().fromJson(element, Live.class);
     }
 
-    public static List<Live> arrayFrom(String str) {
-        Type listType = new TypeToken<List<Live>>() {}.getType();
-        List<Live> items = App.gson().fromJson(str, listType);
-        return items == null ? Collections.emptyList() : items;
-    }
+    @SerializedName("pass")
+    private boolean pass;
+
+    @Ignore
+    private boolean selected;
+
+    @Ignore
+    private int width;
 
     public static Live get(String name) {
         Live live = new Live();
@@ -224,8 +226,8 @@ public class Live {
         return timeout == null ? Constant.TIMEOUT_PLAY : TimeUnit.SECONDS.toMillis(Math.max(timeout, 1));
     }
 
-    public JsonElement getHeader() {
-        return header;
+    public String getKeep() {
+        return TextUtils.isEmpty(keep) ? "" : keep;
     }
 
     public Catchup getCatchup() {
@@ -236,8 +238,12 @@ public class Live {
         return core == null ? new Core() : core;
     }
 
-    public List<Group> getGroups() {
-        return groups = groups == null ? new ArrayList<>() : groups;
+    public Map<String, String> getHeader() {
+        return header == null ? new HashMap<>() : header;
+    }
+
+    public Catchup getCatchup() {
+        return catchup == null ? new Catchup() : catchup;
     }
 
     public boolean isBoot() {
@@ -256,16 +262,16 @@ public class Live {
         this.pass = pass;
     }
 
-    public boolean isActivated() {
-        return activated;
+    public List<Group> getGroups() {
+        return groups = groups == null ? new ArrayList<>() : groups;
     }
 
-    public void setActivated(boolean activated) {
-        this.activated = activated;
+    public boolean isBoot() {
+        return boot;
     }
 
-    public void setActivated(Live item) {
-        this.activated = item.equals(this);
+    public void setBoot(boolean boot) {
+        this.boot = boot;
     }
 
     public int getWidth() {
@@ -356,10 +362,9 @@ public class Live {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Live)) return false;
-        Live it = (Live) obj;
+        if (!(obj instanceof Live it)) return false;
         return getName().equals(it.getName());
     }
 }

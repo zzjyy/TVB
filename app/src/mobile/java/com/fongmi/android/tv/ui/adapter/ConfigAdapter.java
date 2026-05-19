@@ -1,6 +1,7 @@
 package com.fongmi.android.tv.ui.adapter;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -15,11 +16,12 @@ import java.util.List;
 
 public class ConfigAdapter extends RecyclerView.Adapter<ConfigAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private List<Config> mItems;
+    private boolean readOnly;
 
     public ConfigAdapter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
     }
 
     public interface OnClickListener {
@@ -29,6 +31,11 @@ public class ConfigAdapter extends RecyclerView.Adapter<ConfigAdapter.ViewHolder
         void onDeleteClick(Config item);
     }
 
+    public ConfigAdapter readOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+        return this;
+    }
+
     public ConfigAdapter addAll(int type) {
         mItems = Config.getAll(type);
         mItems.remove(type == 0 ? VodConfig.get().getConfig() : LiveConfig.get().getConfig());
@@ -36,9 +43,11 @@ public class ConfigAdapter extends RecyclerView.Adapter<ConfigAdapter.ViewHolder
     }
 
     public int remove(Config item) {
+        int position = mItems.indexOf(item);
+        if (position == -1) return -1;
         item.delete();
-        mItems.remove(item);
-        notifyDataSetChanged();
+        mItems.remove(position);
+        notifyItemRemoved(position);
         return getItemCount();
     }
 
@@ -57,11 +66,12 @@ public class ConfigAdapter extends RecyclerView.Adapter<ConfigAdapter.ViewHolder
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Config item = mItems.get(position);
         holder.binding.text.setText(item.getDesc());
-        holder.binding.text.setOnClickListener(v -> mListener.onTextClick(item));
-        holder.binding.delete.setOnClickListener(v -> mListener.onDeleteClick(item));
+        holder.binding.text.setOnClickListener(v -> listener.onTextClick(item));
+        holder.binding.delete.setVisibility(readOnly ? View.GONE : View.VISIBLE);
+        holder.binding.delete.setOnClickListener(v -> listener.onDeleteClick(item));
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterConfigBinding binding;
 

@@ -17,7 +17,7 @@ import java.util.List;
 
 public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<Site> mItems;
     private boolean search;
     private boolean change;
@@ -59,6 +59,24 @@ public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
         boolean onChangeLongClick(Site item);
     }
 
+    public SiteAdapter search(boolean search) {
+        this.search = search;
+        return this;
+    }
+
+    public SiteAdapter change(boolean change) {
+        this.change = change;
+        return this;
+    }
+
+    private void addAll() {
+        for (Site site : VodConfig.get().getSites()) if (!site.isHide()) mItems.add(site);
+    }
+
+    public List<Site> getItems() {
+        return mItems;
+    }
+
     @Override
     public int getItemCount() {
         return mItems.size();
@@ -77,17 +95,16 @@ public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
         holder.binding.text.setText(item.getName());
         holder.binding.text.setEnabled(on);
         holder.binding.text.setFocusable(on);
-        holder.binding.text.setSelected(on && item.isActivated());
-        holder.binding.text.setActivated(on && item.isActivated());
+        holder.binding.text.setSelected(on && item.isSelected());
         holder.binding.search.setImageResource(getSearchIcon(item));
         holder.binding.change.setImageResource(getChangeIcon(item));
         holder.binding.search.setVisibility(search ? View.VISIBLE : View.GONE);
         holder.binding.change.setVisibility(change ? View.VISIBLE : View.GONE);
-        holder.binding.text.setOnClickListener(v -> mListener.onTextClick(item));
-        holder.binding.search.setOnClickListener(v -> mListener.onSearchClick(position, item));
-        holder.binding.change.setOnClickListener(v -> mListener.onChangeClick(position, item));
-        holder.binding.search.setOnLongClickListener(v -> mListener.onSearchLongClick(item));
-        holder.binding.change.setOnLongClickListener(v -> mListener.onChangeLongClick(item));
+        holder.binding.text.setOnClickListener(v -> listener.onTextClick(item));
+        holder.binding.search.setOnClickListener(v -> listener.onSearchClick(position, item));
+        holder.binding.change.setOnClickListener(v -> listener.onChangeClick(position, item));
+        holder.binding.search.setOnLongClickListener(v -> listener.onSearchLongClick(item));
+        holder.binding.change.setOnLongClickListener(v -> listener.onChangeLongClick(item));
     }
 
     private int getSearchIcon(Site item) {
@@ -98,7 +115,7 @@ public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
         return item.isChangeable() ? R.drawable.ic_site_change : R.drawable.ic_site_block;
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterSiteBinding binding;
 

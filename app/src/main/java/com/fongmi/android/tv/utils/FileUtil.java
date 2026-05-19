@@ -33,6 +33,10 @@ public class FileUtil {
         return Path.files("wallpaper_" + index);
     }
 
+    public static File getWallCache() {
+        return Path.files("wallpaper_cache");
+    }
+
     public static void openFile(File file) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -78,7 +82,7 @@ public class FileUtil {
     }
 
     public static void clearCache(Callback callback) {
-        App.execute(() -> {
+        Task.execute(() -> {
             Path.clear(Path.cache());
             App.post(callback::success);
         });

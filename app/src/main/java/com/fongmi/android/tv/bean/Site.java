@@ -5,6 +5,7 @@ import android.os.Parcelable;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
@@ -24,6 +25,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -48,6 +50,7 @@ public class Site implements Parcelable {
     @Ignore
     @JsonAdapter(ExtAdapter.class)
     @SerializedName("ext")
+    @JsonAdapter(ExtAdapter.class)
     private String ext;
 
     @Ignore
@@ -103,18 +106,37 @@ public class Site implements Parcelable {
     @Ignore
     private boolean activated;
 
-    public static Site objectFrom(JsonElement element) {
+    public Site() {
+    }
+
+    protected Site(Parcel in) {
+        this.key = in.readString();
+        this.name = in.readString();
+        this.api = in.readString();
+        this.ext = in.readString();
+        this.jar = in.readString();
+        this.click = in.readString();
+        this.playUrl = in.readString();
+        this.type = (Integer) in.readValue(Integer.class.getClassLoader());
+        this.indexs = (Integer) in.readValue(Integer.class.getClassLoader());
+        this.timeout = (Integer) in.readValue(Integer.class.getClassLoader());
+        this.searchable = (Integer) in.readValue(Integer.class.getClassLoader());
+        this.changeable = (Integer) in.readValue(Integer.class.getClassLoader());
+        this.categories = in.createStringArrayList();
+        this.style = in.readParcelable(Style.class.getClassLoader());
+        this.selected = in.readByte() != 0;
+    }
+
+    public static Site objectFrom(JsonElement element, String spider) {
         try {
-            return App.gson().fromJson(element, Site.class);
+            Site site = App.gson().fromJson(element, Site.class);
+            if (site.getJar().isEmpty()) site.setJar(spider);
+            site.setApi(UrlUtil.convert(site.getApi()));
+            site.setExt(UrlUtil.convert(site.getExt()));
+            return site.trans();
         } catch (Exception e) {
             return new Site();
         }
-    }
-
-    public static Site get(String key) {
-        Site site = new Site();
-        site.setKey(key);
-        return site;
     }
 
     public static Site get(String key, String name) {
@@ -124,7 +146,8 @@ public class Site implements Parcelable {
         return site;
     }
 
-    public Site() {
+    public static List<Site> findAll() {
+        return AppDatabase.get().getSiteDao().findAll();
     }
 
     public String getKey() {
@@ -231,16 +254,28 @@ public class Site implements Parcelable {
         return getStyle() != null ? getStyle() : style != null ? style : Style.rect();
     }
 
-    public boolean isActivated() {
-        return activated;
+    public Style getStyle(Style style) {
+        return getStyle() != null ? getStyle() : style != null ? style : Style.rect();
     }
 
-    public void setActivated(boolean activated) {
-        this.activated = activated;
+    public boolean isSelected() {
+        return selected;
     }
 
-    public void setActivated(Site item) {
-        this.activated = item.equals(this);
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+    }
+
+    public void setSelected(Site item) {
+        this.selected = item.equals(this);
+    }
+
+    public boolean isHide() {
+        return getHide() == 1;
+    }
+
+    public boolean isIndex() {
+        return getIndexs() == 1;
     }
 
     public boolean isHide() {
@@ -255,6 +290,10 @@ public class Site implements Parcelable {
         return getSearchable() == 1;
     }
 
+    public void setSearchable(Integer searchable) {
+        this.searchable = searchable;
+    }
+
     public Site setSearchable(boolean searchable) {
         if (getSearchable() != 0) setSearchable(searchable ? 1 : 2);
         return this;
@@ -262,6 +301,10 @@ public class Site implements Parcelable {
 
     public boolean isChangeable() {
         return getChangeable() == 1;
+    }
+
+    public void setChangeable(Integer changeable) {
+        this.changeable = changeable;
     }
 
     public Site setChangeable(boolean changeable) {
@@ -277,8 +320,11 @@ public class Site implements Parcelable {
         return getKey().isEmpty() && getName().isEmpty();
     }
 
-    public Headers getHeaders() {
-        return Headers.of(Json.toMap(getHeader()));
+    public Site fetchExt() {
+        if (!getExt().startsWith("http")) return this;
+        String extend = OkHttp.string(getExt());
+        if (!extend.isEmpty()) setExt(extend);
+        return this;
     }
 
     public Site fetchExt() {
@@ -322,11 +368,15 @@ public class Site implements Parcelable {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Site)) return false;
-        Site it = (Site) obj;
-        return getKey().equals(it.getKey());
+        if (!(obj instanceof Site it)) return false;
+        return Objects.equals(getKey(), it.getKey());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getKey());
     }
 
     @Override

@@ -2,15 +2,18 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
-        jcenter()
         google()
     }
 }
+
+plugins {
+    id "org.gradle.toolchains.foojay-resolver-convention" version "1.0.0"
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()
-        jcenter()
         google()
         flatDir { dirs "$rootDir/app/libs" }
         maven { url "https://jitpack.io" }
@@ -20,6 +23,7 @@ dependencyResolutionManagement {
         }
     }
 }
+
 include ':app'
 include ':catvod'
 include ':chaquo'

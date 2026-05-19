@@ -58,9 +58,5 @@ public class CustomLiveListView extends VerticalGridView {
     public interface Callback {
 
         void setUITimer();
-
-        boolean nextGroup(boolean skip);
-
-        boolean prevGroup(boolean skip);
     }
 }

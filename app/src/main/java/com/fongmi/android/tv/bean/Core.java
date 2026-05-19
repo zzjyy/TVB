@@ -30,6 +30,18 @@ public class Core {
     private String pkg;
     @SerializedName("so")
     private String so;
+    @SerializedName("key")
+    private String key;
+    @SerializedName("option")
+    private List<Option> option;
+
+    public static Core objectFrom(String str) {
+        return new Gson().fromJson(str, Core.class);
+    }
+
+    public static String getString(String value) {
+        return (value = UrlUtil.convert(value)).startsWith("http") ? OkHttp.string(value) : value;
+    }
 
     public String getAuth() {
         return !getResp().isEmpty() ? Server.get().getAddress("/tvbus") : TextUtils.isEmpty(auth) ? "" : UrlUtil.convert(auth);

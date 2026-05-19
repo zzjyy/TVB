@@ -16,11 +16,11 @@ import java.util.List;
 
 public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
 
-    private final OnClickListener mListener;
+    private final OnClickListener listener;
     private final List<Flag> mItems;
 
     public FlagAdapter(OnClickListener listener) {
-        this.mListener = listener;
+        this.listener = listener;
         this.mItems = new ArrayList<>();
     }
 
@@ -35,13 +35,22 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
+    public void add(Flag item) {
+        mItems.add(item);
+        notifyItemInserted(mItems.size() - 1);
+    }
+
     public int getPosition() {
-        for (int i = 0; i < mItems.size(); i++) if (mItems.get(i).isActivated()) return i;
+        for (int i = 0; i < mItems.size(); i++) if (mItems.get(i).isSelected()) return i;
         return 0;
     }
 
     public Flag get(int position) {
         return mItems.get(position);
+    }
+
+    public List<Flag> getItems() {
+        return mItems;
     }
 
     public Flag getActivated() {
@@ -55,7 +64,7 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
     }
 
     public void toggle(Episode episode) {
-        for (Flag item : mItems) item.toggle(item.isActivated(), episode);
+        for (Flag item : mItems) item.toggle(item.isSelected(), episode);
     }
 
     public void reverse() {
@@ -81,11 +90,11 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Flag item = mItems.get(position);
         holder.binding.text.setText(item.getShow());
-        holder.binding.text.setActivated(item.isActivated());
-        holder.binding.text.setOnClickListener(v -> mListener.onItemClick(item));
+        holder.binding.text.setSelected(item.isSelected());
+        holder.binding.text.setOnClickListener(v -> listener.onItemClick(item));
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private final AdapterFlagBinding binding;
 

@@ -15,12 +15,16 @@ import com.fongmi.android.tv.utils.ResUtil;
 
 public class CustomRecyclerView extends RecyclerView {
 
+    private int minWidth;
+    private int minHeight;
+    private int maxWidth;
     private int maxHeight;
     private float x1;
     private float y1;
 
     public CustomRecyclerView(@NonNull Context context) {
         super(context);
+        init(context, null);
     }
 
     public CustomRecyclerView(@NonNull Context context, @Nullable AttributeSet attrs) {
@@ -42,6 +46,37 @@ public class CustomRecyclerView extends RecyclerView {
         maxHeight = a.getLayoutDimension(R.styleable.CustomRecyclerView_maxHeight, maxHeight);
         setOverScrollMode(View.OVER_SCROLL_NEVER);
         a.recycle();
+    }
+
+    public void setMinWidth(int minWidth) {
+        this.minWidth = minWidth;
+    }
+
+    public void setMaxWidth(int maxWidth) {
+        this.maxWidth = maxWidth;
+    }
+
+    public void setMinHeight(int minHeight) {
+        this.minHeight = minHeight;
+    }
+
+    public void setMaxHeight(int maxHeight) {
+        this.maxHeight = maxHeight;
+    }
+
+    private int getConstrainedSize(int measuredSize, int minSize, int maxSize) {
+        int finalSize = measuredSize;
+        if (maxSize > 0) finalSize = Math.min(finalSize, maxSize);
+        if (minSize > 0) finalSize = Math.max(finalSize, minSize);
+        return finalSize;
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int finalWidth = getConstrainedSize(getMeasuredWidth(), minWidth, maxWidth);
+        int finalHeight = getConstrainedSize(getMeasuredHeight(), minHeight, maxHeight);
+        setMeasuredDimension(finalWidth, finalHeight);
     }
 
     private void focus(int position) {

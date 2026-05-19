@@ -6,11 +6,10 @@ import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.AppCompatTextView;
 
 import com.fongmi.android.tv.utils.KeyUtil;
 
-public class CustomUpDownView extends AppCompatTextView {
+public class CustomUpDownView extends MaterialTextView {
 
     private UpListener upListener;
     private DownListener downListener;

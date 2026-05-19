@@ -1,6 +1,7 @@
 package com.fongmi.android.tv.utils;
 
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Paint;
@@ -82,10 +83,6 @@ public class ResUtil {
 
     public static int dp2px(int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getDisplayMetrics());
-    }
-
-    public static int getDrawable(String resId) {
-        return App.get().getResources().getIdentifier(resId, "drawable", App.get().getPackageName());
     }
 
     public static String getString(@StringRes int resId) {

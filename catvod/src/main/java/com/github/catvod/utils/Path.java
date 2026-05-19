@@ -1,10 +1,11 @@
 package com.github.catvod.utils;
 
 import android.os.Environment;
-import android.util.Log;
 
 import com.github.catvod.Init;
+import com.orhanobut.logger.Logger;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -26,6 +27,10 @@ public class Path {
 
     public static boolean exists(String path) {
         return new File(path.replace("file://", "")).exists();
+    }
+
+    public static boolean exists(File file) {
+        return file != null && file.exists() && file.length() > 0;
     }
 
     public static File root() {
@@ -132,12 +137,8 @@ public class Path {
 
     public static String read(InputStream is) {
         try {
-            byte[] data = new byte[is.available()];
-            is.read(data);
-            is.close();
-            return new String(data, StandardCharsets.UTF_8);
+            return new String(readToByte(is), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            e.printStackTrace();
             return "";
         }
     }
@@ -169,6 +170,7 @@ public class Path {
     }
 
     public static void move(File in, File out) {
+        if (in.renameTo(out)) return;
         copy(in, out);
         clear(in);
     }
@@ -209,7 +211,7 @@ public class Path {
     public static void clear(File dir) {
         if (dir == null) return;
         if (dir.isDirectory()) for (File file : list(dir)) clear(file);
-        if (dir.delete()) Log.d(TAG, "Deleted:" + dir.getAbsolutePath());
+        if (dir.delete()) Logger.t(TAG).d("Deleted:" + dir);
     }
 
     public static File create(File file) {
@@ -219,8 +221,7 @@ public class Path {
             if (!file.exists()) file.createNewFile();
             Shell.exec("chmod 777 " + file);
             return file;
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
             return file;
         }
     }

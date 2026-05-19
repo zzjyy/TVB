@@ -14,6 +14,7 @@ import com.fongmi.android.tv.utils.ResUtil;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Path;
 import com.google.gson.JsonObject;
+import com.orhanobut.logger.Logger;
 import com.tvbus.engine.Listener;
 import com.tvbus.engine.TVCore;
 
@@ -81,12 +82,13 @@ public class TVBus implements Source.Extractor, Listener {
 
     @Override
     public void exit() {
-        if (tvcore != null) tvcore.quit();
-        tvcore = null;
+        if (tvcore != null) tvcore.stop();
+        hls = null;
     }
 
     @Override
     public void onPrepared(String result) {
+        Logger.t(TAG).d(result);
         JsonObject json = App.gson().fromJson(result, JsonObject.class);
         if (json.get("hls") == null) return;
         hls = json.get("hls").getAsString();
@@ -102,10 +104,12 @@ public class TVBus implements Source.Extractor, Listener {
 
     @Override
     public void onInited(String result) {
+        Logger.t(TAG).d(result);
     }
 
     @Override
     public void onStart(String result) {
+        Logger.t(TAG).d(result);
     }
 
     @Override

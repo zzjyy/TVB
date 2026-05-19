@@ -13,7 +13,7 @@ import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.db.AppDatabase;
-import com.fongmi.android.tv.event.RefreshEvent;
+import com.fongmi.android.tv.impl.Diffable;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Entity
-public class History {
+public class History implements Diffable<History> {
 
     @NonNull
     @PrimaryKey
@@ -60,12 +60,24 @@ public class History {
     @SerializedName("cid")
     private int cid;
 
+    private transient long updateTime;
+
+    public History() {
+        this.speed = 1;
+        this.scale = -1;
+        this.ending = C.TIME_UNSET;
+        this.opening = C.TIME_UNSET;
+        this.position = C.TIME_UNSET;
+        this.duration = C.TIME_UNSET;
+    }
+
     public static History objectFrom(String str) {
         return App.gson().fromJson(str, History.class);
     }
 
     public static List<History> arrayFrom(String str) {
-        Type listType = new TypeToken<List<History>>() {}.getType();
+        Type listType = new TypeToken<List<History>>() {
+        }.getType();
         List<History> items = App.gson().fromJson(str, listType);
         return items == null ? Collections.emptyList() : items;
     }
@@ -152,6 +164,10 @@ public class History {
         this.createTime = createTime;
     }
 
+    public long getUpdateTime() {
+        return updateTime;
+    }
+
     public long getOpening() {
         return opening;
     }
@@ -208,6 +224,11 @@ public class History {
         this.cid = cid;
     }
 
+    public History cid(int cid) {
+        setCid(cid);
+        return this;
+    }
+
     public String getSiteName() {
         return VodConfig.get().getSite(getSiteKey()).getName();
     }
@@ -252,8 +273,9 @@ public class History {
         return AppDatabase.get().getHistoryDao().find(VodConfig.getCid(), key);
     }
 
-    public static void delete(int cid) {
-        AppDatabase.get().getHistoryDao().delete(cid);
+    public History merge() {
+        merge(false);
+        return this;
     }
 
     private void checkParam(History item) {
@@ -271,22 +293,17 @@ public class History {
         }
     }
 
-    public void update() {
-        merge(find(), false);
-        save();
+    public void replace(String key) {
+        delete();
+        setKey(key);
     }
 
-    public History update(int cid) {
-        return update(cid, find());
-    }
-
-    public History update(int cid, List<History> items) {
-        setCid(cid);
-        merge(items, true);
-        return save();
+    public History save(int cid) {
+        return cid(cid).merge(true).save();
     }
 
     public History save() {
+        updateTime = System.currentTimeMillis();
         AppDatabase.get().getHistoryDao().insertOrUpdate(this);
         return this;
     }
@@ -313,10 +330,10 @@ public class History {
             for (Flag flag : flags) {
                 Episode episode = flag.find(item.getVodRemarks(), true);
                 if (episode == null) continue;
+                item.copyTo(this);
                 setVodFlag(flag.getFlag());
                 setPosition(item.getPosition());
                 setVodRemarks(episode.getName());
-                checkParam(item);
                 break;
             }
         }
@@ -338,16 +355,24 @@ public class History {
         }
     }
 
-    public static void sync(List<History> targets) {
-        App.execute(() -> {
-            startSync(targets);
-            RefreshEvent.history();
-        });
+    @Override
+    public int hashCode() {
+        return Objects.hash(getKey());
     }
 
     @NonNull
     @Override
     public String toString() {
         return App.gson().toJson(this);
+    }
+
+    @Override
+    public boolean isSameItem(History other) {
+        return equals(other);
+    }
+
+    @Override
+    public boolean isSameContent(History other) {
+        return getVodName().equals(other.getVodName()) && getVodPic().equals(other.getVodPic()) && getCreateTime() == other.getCreateTime();
     }
 }
