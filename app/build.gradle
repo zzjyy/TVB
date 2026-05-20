@@ -101,12 +101,6 @@ androidComponents {
             output.outputFileName.set("${mode}-${abi}.apk")
         }
     }
-
-    compileOptions {
-        coreLibraryDesugaringEnabled true
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
-    }
 }
 
 dependencies {
