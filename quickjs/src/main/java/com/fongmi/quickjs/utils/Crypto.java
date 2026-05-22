@@ -4,6 +4,7 @@ import android.util.Base64;
 
 import com.github.catvod.utils.Util;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.spec.PKCS8EncodedKeySpec;

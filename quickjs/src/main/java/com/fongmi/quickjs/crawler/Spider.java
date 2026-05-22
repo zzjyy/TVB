@@ -52,13 +52,13 @@ public class Spider extends com.github.catvod.crawler.Spider {
     }
 
     private Object call(String func, Object... args) throws Exception {
-        return CompletableFuture.supplyAsync(() -> Async.run(jsObject, func, args), executor).join().get();
+        return submit(() -> Async.run(jsObject, func, args)).get().get();
     }
 
     @Override
     public void init(Context context, String extend) throws Exception {
-        if (cat) call("init", submit(() -> cfg(extend)).get());
-        else call("init", Json.isObj(extend) ? ctx.parse(extend) : extend);
+        initializeJS();
+        call("init", submit(() -> getExt(extend)).get());
     }
 
     @Override
@@ -124,19 +124,23 @@ public class Spider extends com.github.catvod.crawler.Spider {
     }
 
     @Override
-    public String action(String action) throws Exception {
-        return (String) call("action", action);
-    }
-
-    @Override
     public void destroy() {
         try {
             call("destroy");
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        submit(() -> {
+        try {
+            releaseJS();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        } finally {
             executor.shutdownNow();
+        }
+    }
+
+    private void releaseJS() throws Exception {
+        submit(() -> {
             jsObject.release();
             ctx.destroy();
             return null;
@@ -175,8 +179,7 @@ public class Spider extends com.github.catvod.crawler.Spider {
             Global.create(ctx, executor);
             Class<?> clz = dex.loadClass("com.github.catvod.js.Function");
             clz.getDeclaredConstructor(QuickJSContext.class).newInstance(ctx);
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable ignored) {
         }
     }
 
@@ -190,18 +193,21 @@ public class Spider extends com.github.catvod.crawler.Spider {
         jsObject = (JSObject) ctx.getProperty(ctx.getGlobalObject(), spider);
     }
 
-    private JSObject cfg(String ext) {
-        JSObject cfg = ctx.createNewJSObject();
-        cfg.setProperty("stype", 3);
-        cfg.setProperty("skey", key);
-        if (!Json.isObj(ext)) cfg.setProperty("ext", ext);
-        else cfg.setProperty("ext", (JSObject) ctx.parse(ext));
-        return cfg;
+    private Object getExt(String ext) {
+        if (!cat) return Json.isObj(ext) ? ctx.parse(ext) : ext;
+        JSObject obj = ctx.createNewJSObject();
+        obj.setProperty("stype", 3);
+        obj.setProperty("skey", siteKey);
+        if (!Json.isObj(ext)) obj.setProperty("ext", ext);
+        else obj.setProperty("ext", (JSObject) ctx.parse(ext));
+        return obj;
     }
 
     private Object[] proxy1(Map<String, String> params) throws Exception {
-        JSObject object = JSUtil.toObject(ctx, params);
-        JSONArray array = new JSONArray(((JSArray) jsObject.getJSFunction("proxy").call(object)).stringify());
+        JSObject obj = submit(() -> JSUtil.toObject(ctx, params)).get();
+        JSArray proxy = (JSArray) call("proxy", obj);
+        String json = submit(proxy::stringify).get();
+        JSONArray array = new JSONArray(json);
         Map<String, String> headers = array.length() > 3 ? Json.toMap(array.optString(3)) : null;
         boolean base64 = array.length() > 4 && array.optInt(4) == 1;
         Object[] result = new Object[4];

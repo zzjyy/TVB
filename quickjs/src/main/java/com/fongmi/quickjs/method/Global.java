@@ -43,13 +43,6 @@ public class Global {
         return new Global(ctx, executor);
     }
 
-    private Global(QuickJSContext ctx, ExecutorService executor) {
-        this.executor = executor;
-        this.timer = new Timer();
-        this.ctx = ctx;
-        setProperty();
-    }
-
     private void setProperty() {
         for (Method method : getClass().getMethods()) {
             if (!method.isAnnotationPresent(JSMethod.class)) continue;
