@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="home" type="id" />
+    <item name="quality" type="id" />
+    <item name="quick" type="id" />
+</resources>
