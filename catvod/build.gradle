@@ -17,14 +17,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
     }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
-    }
 }
 
 dependencies {
+    coreLibraryDesugaring libs.desugar
     api 'androidx.annotation:annotation:1.6.0'
     api 'androidx.preference:preference:1.2.1'
     api 'com.google.code.gson:gson:' + gsonVersion

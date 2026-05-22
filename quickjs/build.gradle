@@ -21,14 +21,10 @@ android {
     lint {
         disable 'UnsafeOptInUsageError'
     }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
-    }
 }
 
 dependencies {
+    coreLibraryDesugaring libs.desugar
     implementation project(':catvod')
     implementation 'wang.harlon.quickjs:wrapper-java:3.2.0'
     implementation 'wang.harlon.quickjs:wrapper-android:3.2.0'
