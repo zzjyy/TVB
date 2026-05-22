@@ -78,18 +78,6 @@ public abstract class Spider {
         return null;
     }
 
-    public String action(String action) throws Exception {
-        return null;
-    }
-
     public void destroy() {
-    }
-
-    public static Dns safeDns() {
-        return OkHttp.dns();
-    }
-
-    public static OkHttpClient client() {
-        return OkHttp.client();
     }
 }

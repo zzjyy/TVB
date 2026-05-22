@@ -3,15 +3,16 @@ package com.github.catvod.net.interceptor;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.github.catvod.bean.Header;
 import com.github.catvod.utils.Json;
+import com.github.catvod.utils.Util;
 import com.google.common.net.HttpHeaders;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -25,23 +26,20 @@ import okio.Okio;
 
 public class ResponseInterceptor implements Interceptor {
 
+    private final List<Header> headers;
     private final ConcurrentHashMap<String, String> redirectMap;
-    private final ConcurrentHashMap<String, JsonObject> headerMap;
 
     public ResponseInterceptor() {
-        headerMap = new ConcurrentHashMap<>();
+        headers = new CopyOnWriteArrayList<>();
         redirectMap = new ConcurrentHashMap<>();
     }
 
-    public synchronized void setHeaders(List<JsonElement> items) {
-        for (JsonElement item : items) {
-            JsonObject object = Json.safeObject(item);
-            headerMap.put(object.get("host").getAsString(), object.get("header").getAsJsonObject());
-        }
+    public void addAll(List<Header> items) {
+        headers.addAll(items);
     }
 
     public void clear() {
-        headerMap.clear();
+        headers.clear();
         redirectMap.clear();
     }
 
@@ -50,7 +48,8 @@ public class ResponseInterceptor implements Interceptor {
     public Response intercept(@NonNull Chain chain) throws IOException {
         Request request = check(chain.request());
         Response response = chain.proceed(request);
-        if ("deflate".equals(response.header(HttpHeaders.CONTENT_ENCODING))) return deflate(response);
+        String encoding = response.header(HttpHeaders.CONTENT_ENCODING);
+        if ("deflate".equalsIgnoreCase(encoding)) return deflate(response);
         if (response.code() == 406 && redirectMap.containsKey(request.url().toString())) return redirect(request, response);
         if (response.code() == 302 && response.header(HttpHeaders.LOCATION) != null) redirectMap.put(response.header(HttpHeaders.LOCATION), request.url().toString());
         return response;
@@ -59,8 +58,7 @@ public class ResponseInterceptor implements Interceptor {
     private Request check(Request request) {
         String host = request.url().host();
         Request.Builder builder = request.newBuilder();
-        if (!headerMap.containsKey(host)) return request;
-        for (Map.Entry<String, JsonElement> entry : headerMap.get(host).entrySet()) builder.header(entry.getKey(), entry.getValue().getAsString());
+        for (Header item : headers) if (Util.containOrMatch(host, item.getHost())) Json.toMap(item.getHeader()).forEach(builder::header);
         return builder.build();
     }
 
@@ -69,8 +67,12 @@ public class ResponseInterceptor implements Interceptor {
     }
 
     private Response deflate(Response response) {
-        InflaterInputStream is = new InflaterInputStream(response.body().byteStream(), new Inflater(true));
-        return response.newBuilder().headers(response.headers()).body(new ResponseBody() {
+        InputStream is = new InflaterInputStream(response.body().byteStream(), new Inflater(true));
+        return response.newBuilder().headers(response.headers()).body(getBody(response, is)).build();
+    }
+
+    private ResponseBody getBody(Response response, InputStream is) {
+        return new ResponseBody() {
             @Nullable
             @Override
             public MediaType contentType() {
@@ -79,7 +81,7 @@ public class ResponseInterceptor implements Interceptor {
 
             @Override
             public long contentLength() {
-                return response.body().contentLength();
+                return -1;
             }
 
             @NonNull
@@ -87,6 +89,6 @@ public class ResponseInterceptor implements Interceptor {
             public BufferedSource source() {
                 return Okio.buffer(Okio.source(is));
             }
-        }).build();
+        };
     }
 }
