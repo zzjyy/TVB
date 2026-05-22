@@ -46,7 +46,6 @@
     <string name="play_title">Chapter</string>
     <string name="play_scale">Default</string>
     <string name="play_config">Config</string>
-    <string name="play_change">Change</string>
     <string name="play_invert">Invert</string>
     <string name="play_across">Across</string>
     <string name="play_reverse">Reverse</string>
@@ -107,8 +106,6 @@
     <string name="danmaku_reset">Reset</string>
 
     <!-- Danmaku -->
-    <string name="danmaku">Danmaku</string>
-    <string name="danmaku_select">Select danmaku</string>
 
     <!-- Parse -->
     <string name="parse">Parse</string>
