@@ -92,18 +92,6 @@
             tools:visibility="visible" />
 
         <TextView
-            android:id="@+id/ending"
-            style="@style/Control.Action"
-            tools:text="片尾" />
-
-        <TextView
-            android:id="@+id/danmaku"
-            style="@style/Control.Action"
-            android:text="@string/danmaku"
-            android:visibility="gone"
-            tools:visibility="visible" />
-
-        <TextView
             android:id="@+id/episodes"
             style="@style/Control"
             android:text="@string/detail_episode" />

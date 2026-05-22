@@ -13,11 +13,6 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/player"
-            style="@style/Control.Action"
-            android:text="@string/play_exo" />
-
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/home"
             style="@style/Control"
