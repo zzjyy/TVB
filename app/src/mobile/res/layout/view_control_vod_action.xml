@@ -15,7 +15,7 @@
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/player"
-            style="@style/Control.Action"
+            style="@style/Control"
             android:text="@string/play_exo" />
 
         <com.google.android.material.textview.MaterialTextView
@@ -91,7 +91,7 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/episodes"
             style="@style/Control"
             android:text="@string/detail_episode" />

@@ -14,6 +14,11 @@
         android:orientation="horizontal">
 
         <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/config"
+            style="@style/Control"
+            android:text="@string/play_config" />
+
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/home"
             style="@style/Control"
             tools:text="首頁" />
@@ -71,13 +76,12 @@
             android:tag="2"
             android:text="@string/play_track_video" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/invert"
-            style="@style/Control.Action"
-            android:text="@string/play_invert"
-            android:textColor="@color/text" />
+            style="@style/Control"
+            android:text="@string/play_invert" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/across"
             style="@style/Control"
             android:text="@string/play_across" />

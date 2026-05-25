@@ -1,10 +1,7 @@
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
 
     <!-- App -->
     <string name="app_name">TV</string>
-
-    <!-- Vod -->
-    <string name="vod_last">Last seen <xliff:g name="name">%s</xliff:g></string>
 
     <!-- Live -->
     <string name="live_pass">Pass</string>
@@ -12,7 +9,7 @@
     <string name="live_line">Line <xliff:g name="name">%s</xliff:g></string>
 
     <!-- Detail -->
-    <string name="detail_title"><xliff:g name="name">%1$s</xliff:g> : <xliff:g name="name">%2$s</xliff:g></string>
+    <string name="detail_title"><xliff:g name="name">%s</xliff:g> : <xliff:g name="name">%s</xliff:g></string>
     <string name="detail_site">Site: <xliff:g name="name">%s</xliff:g></string>
     <string name="detail_year">Year: <xliff:g name="name">%s</xliff:g></string>
     <string name="detail_area">Area: <xliff:g name="name">%s</xliff:g></string>
@@ -35,17 +32,18 @@
     <string name="play_exo">EXO</string>
     <string name="play_next">Next</string>
     <string name="play_prev">Prev</string>
-    <string name="play_loop">Loop</string>
-    <string name="play_timer">Timer</string>
-    <string name="play_change">Change</string>
+    <string name="play_stop">Stop</string>
+    <string name="play_repeat">Repeat</string>
     <string name="play_forward">→</string>
     <string name="play_backward">←</string>
     <string name="play_speed">1.00</string>
     <string name="play_reset">Reset</string>
     <string name="play_decode">Hard</string>
+    <string name="play_timer">Timer</string>
     <string name="play_title">Chapter</string>
     <string name="play_scale">Default</string>
     <string name="play_config">Config</string>
+    <string name="play_change">Change</string>
     <string name="play_invert">Invert</string>
     <string name="play_across">Across</string>
     <string name="play_reverse">Reverse</string>
@@ -105,8 +103,6 @@
     <string name="danmaku_section_density">Density</string>
     <string name="danmaku_reset">Reset</string>
 
-    <!-- Danmaku -->
-
     <!-- Parse -->
     <string name="parse">Parse</string>
     <string name="parse_god">Super</string>
@@ -121,8 +117,11 @@
     <string name="setting_live">Live</string>
     <string name="setting_wall">Wallpaper</string>
     <string name="setting_player">Player setting</string>
+    <string name="setting_danmaku">Danmaku setting</string>
     <string name="setting_incognito">Incognito mode</string>
-    <string name="setting_quality">Image quality</string>
+    <string name="setting_theme_color">Theme color</string>
+    <string name="setting_auto">Auto</string>
+    <string name="setting_custom">Custom</string>
     <string name="setting_size">Image size</string>
     <string name="setting_doh">DoH</string>
     <string name="setting_proxy">Proxy</string>
@@ -149,12 +148,19 @@
     <string name="player_caption">Caption style</string>
     <string name="player_background">Background play</string>
     <string name="player_audio_decode">Audio software decode</string>
+    <string name="player_video_decode">Video software decode</string>
     <string name="player_aac_track">Prefer aac track</string>
-    <string name="player_danmaku_load">Danmaku load</string>
+    <string name="player_adblock">Remove ads</string>
     <string name="player_tunnel">Tunnel mode</string>
     <string name="player_buffer">Buffer time</string>
     <string name="player_speed">Press speed</string>
     <string name="player_ua">User-Agent</string>
+
+    <!-- Danmaku -->
+    <string name="danmaku_load">Danmaku load</string>
+    <string name="danmaku_api">Search API</string>
+    <string name="danmaku_auto_load">Auto search</string>
+    <string name="danmaku_spider_first">Spider first</string>
 
     <!-- Search -->
     <string name="search_keyword">Keywords…</string>
@@ -176,13 +182,13 @@
     <string name="error_play_next">It\'s the last episode!</string>
     <string name="error_play_prev">It\'s the first episode!</string>
     <string name="error_play_parse">Unable to parse url</string>
-    <string name="error_play_drm_scheme">This device does not support the required DRM scheme</string>
-    <string name="error_play_code">Error code: <xliff:g name="name">%s</xliff:g></string>
+    <string name="error_play_drm">This device does not support the required DRM scheme</string>
     <string name="error_play_url">Unable to load url</string>
     <string name="error_play_flag">No flag data</string>
     <string name="error_play_timeout">Timed out</string>
+    <string name="error_play_tvbus">Error code: <xliff:g name="name">%s</xliff:g></string>
     <string name="error_detail">No play data</string>
-    <string name="error_empty">Not found</string>
+    <string name="error_empty">Nothing here 👀</string>
 
     <!-- Update -->
     <string name="update_version">New version <xliff:g name="name">%s</xliff:g></string>
@@ -201,6 +207,7 @@
 
     <!-- UNIT -->
     <string name="all">All</string>
+    <string name="yes">Yes</string>
     <string name="none">None</string>
     <string name="times">times</string>
     <string name="lines">lines</string>
